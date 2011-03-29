@@ -6,7 +6,10 @@ require_once(TOOLKIT . '/class.datasourcemanager.php');
 Class UnionDatasource extends Datasource {
 
 	protected $datasources = array();
-	protected $entry_objects = array();
+	protected $entry_objects = array(
+		'entries' => array(),
+		'total-entries' => 0
+	);
 	protected $sort = array();
 	protected $field_pool = array();
 
@@ -29,7 +32,7 @@ Class UnionDatasource extends Datasource {
 		// Loop over all the unions and get a Datasource object
 		foreach($this->dsParamUNION as $handle) {
 			$this->datasources[$handle] = array(
-				'datasource' => $this->datasourceManager->create(str_replace('-','_', $handle), array(), false),
+				'datasource' => $this->datasourceManager->create(str_replace('-','_', $handle), array(), true),
 				'entries' => array()
 			);
 
@@ -51,11 +54,23 @@ Class UnionDatasource extends Datasource {
 		foreach($this->datasources as $handle => $datasource) {
 			$entries = $this->grab_entries($datasource['datasource']);
 			$this->datasources[$handle]['entries'] = $this->getEntryIDs($entries['records']);
-			$this->entry_objects = array_merge($this->entry_objects, $entries['records']);
+
+			$this->entry_objects['entries'] = array_merge($this->entry_objects['entries'], $entries['records']);
+			$this->entry_objects['total-entries'] = $this->entry_objects['total-entries'] + $entries['total-entries'];
 		}
 
 		// Get the SORT field that should be used
-		usort($this->entry_objects, array($this, 'sortEntries'));
+		usort($this->entry_objects['entries'], array($this, 'sortEntries'));
+
+		// Apply the pagination of this datasource
+		if($this->dsParamPAGINATERESULTS == 'yes') {
+			$this->entry_objects['entries'] = array_slice(
+				$this->entry_objects['entries'],
+				($this->dsParamSTARTPAGE == 1) ? 0 : $this->dsParamSTARTPAGE,
+				$this->dsParamLIMIT,
+				true
+			);
+		}
 
 		return $this->output($param_pool);
 	}
@@ -129,7 +144,6 @@ Class UnionDatasource extends Datasource {
 					if(!$this->field_pool[$field_id]->buildDSRetrivalSQL($value, $joins, $where, ($filter_type == DS_FILTER_AND ? true : false))){ $this->_force_empty_result = true; return; }
 					if(!$group) $group = $this->field_pool[$field_id]->requiresSQLGrouping();
 				}
-
 			}
 		}
 
@@ -142,12 +156,11 @@ Class UnionDatasource extends Datasource {
 		if (!is_array($datasource_schema)) $datasource_schema = array();
 		if ($datasource->dsParamPARAMOUTPUT) $datasource_schema[] = $datasource->dsParamPARAMOUTPUT;
 		if ($datasource->dsParamGROUP) $datasource_schema[] = $this->entryManager->fieldManager->fetchHandleFromID($datasource->dsParamGROUP);
-		if(!isset($datasource->dsParamPAGINATERESULTS)) $datasource->dsParamPAGINATERESULTS = 'yes';
 
 		$entries = $this->entryManager->fetchByPage(
-			($datasource->dsParamPAGINATERESULTS == 'yes' && $datasource->dsParamSTARTPAGE > 0 ? $datasource->dsParamSTARTPAGE : 1),
+			1,
 			$datasource->getSource(),
-			($datasource->dsParamPAGINATERESULTS == 'yes' && $datasource->dsParamLIMIT >= 0 ? $datasource->dsParamLIMIT : NULL),
+			NULL,
 			$where, $joins, $group,
 			false,
 			true,
@@ -233,6 +246,20 @@ Class UnionDatasource extends Datasource {
 	public function output(&$param_pool) {
 		$result = new XMLElement($this->dsParamROOTELEMENT);
 
+		// Add Pagination
+		if(is_array($this->dsParamINCLUDEDELEMENTS) && in_array('system:pagination', $this->dsParamINCLUDEDELEMENTS)) {
+			$pagination_element = General::buildPaginationElement(
+				$this->entry_objects['total-entries'],
+				max(1, ceil($this->entry_objects['total-entries'] * (1 / $this->dsParamLIMIT))),
+				$this->dsParamLIMIT,
+				$this->dsParamSTARTPAGE
+			);
+
+			if($pagination_element instanceof XMLElement && $result instanceof XMLElement){
+				$result->prependChild($pagination_element);
+			}
+		}
+
 		foreach($this->datasources as $handle => $ds) {
 			if(!$section = $this->entryManager->sectionManager->fetch($ds['datasource']->getSource())){
 				$about = $ds['datasource']->about();
@@ -246,7 +273,7 @@ Class UnionDatasource extends Datasource {
 			);
 		}
 
-		foreach($this->entry_objects as $entry) {
+		foreach($this->entry_objects['entries'] as $entry) {
 			$datasource = null;
 			$data = $entry->getData();
 
