@@ -5,16 +5,45 @@ require_once(TOOLKIT . '/class.datasourcemanager.php');
 
 Class UnionDatasource extends Datasource {
 
+	/**
+	 * An array of Field objects, used to stop unnecessary creation of field objects
+	 * @var array
+	 */
+	public static $field_pool = array();
+
+	/**
+	 * @var DatasourceManager
+	 */
+	public static $datasourceManager = null;
+
+	/**
+	 * @var EntryManager
+	 */
+	public static $entryManager = null;
+
+	/**
+	 * An associative array of the datasources that should become one.
+	 * This has two keys, `datasource` and `entries`
+	 * @var array
+	 */
 	protected $datasources = array();
+
+	/**
+	 * An array containing all the `Entry` objects and the total number of
+	 * entries considered for the union.
+	 * @var array
+	 */
 	protected $entry_objects = array(
 		'entries' => array(),
 		'total-entries' => 0
 	);
-	protected $sort = array();
-	protected $field_pool = array();
 
-	protected $datasourceManager = null;
-	protected $entryManager = null;
+	/**
+	 * An associative array, with the key being the Sort `field_id` and the value
+	 * being the column name that the Field internally uses to sort on in the SQL
+	 * @var array
+	 */
+	protected $sort = array();
 
 	/**
 	 * Called from the Datasource, this function will loop over `dsParamUNION`
@@ -26,22 +55,30 @@ Class UnionDatasource extends Datasource {
 	 * @return XMLElement
 	 */
 	public function grab(&$param_pool = null) {
-		$this->datasourceManager = new DatasourceManager(Symphony::Engine());
-		$this->entryManager = new EntryManager(Symphony::Engine());
+		if(!isset(self::$datasourceManager)) {
+			self::$datasourceManager = new DatasourceManager(Symphony::Engine());
+		}
+
+		if(!isset(self::$entryManager)) {
+			self::$entryManager = new EntryManager(Symphony::Engine());
+		}
 
 		// Loop over all the unions and get a Datasource object
 		foreach($this->dsParamUNION as $handle) {
 			$this->datasources[$handle] = array(
-				'datasource' => $this->datasourceManager->create(str_replace('-','_', $handle), array(), true),
+				'datasource' => self::$datasourceManager->create(str_replace('-','_', $handle), array(), true),
 				'entries' => array()
 			);
 
 			$ds = $this->datasources[$handle]['datasource'];
-			$sort_field_id = $this->entryManager->fieldManager->fetchFieldIDFromElementName($ds->dsParamSORT, $ds->getSource());
-			$sort_field = $this->entryManager->fieldManager->fetch($sort_field_id);
+			$sort_field_id = self::$entryManager->fieldManager->fetchFieldIDFromElementName($ds->dsParamSORT, $ds->getSource());
+
+			if(!isset(self::$field_pool[$sort_field_id]) || !self::$field_pool[$sort_field_id] instanceof Field) {
+				self::$field_pool[$sort_field_id] = self::$entryManager->fieldManager->fetch($sort_field_id);
+			}
 
 			$joins = $where = $sort = "";
-			$sort_field->buildSortingSQL($joins, $where, $sort);
+			self::$field_pool[$sort_field_id]->buildSortingSQL($joins, $where, $sort);
 
 			// We just want the column that the field uses internally to sort by with MySQL
 			// We'll use this field and sort in PHP instead
@@ -66,7 +103,7 @@ Class UnionDatasource extends Datasource {
 		if($this->dsParamPAGINATERESULTS == 'yes') {
 			$this->entry_objects['entries'] = array_slice(
 				$this->entry_objects['entries'],
-				($this->dsParamSTARTPAGE == 1) ? 0 : $this->dsParamSTARTPAGE,
+				($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
 				$this->dsParamLIMIT,
 				true
 			);
@@ -93,7 +130,7 @@ Class UnionDatasource extends Datasource {
 		$joins = NULL;
 		$group = false;
 
-		if(!$section = $this->entryManager->sectionManager->fetch($datasource->getSource())){
+		if(!$section = self::$entryManager->sectionManager->fetch($datasource->getSource())){
 			$about = $datasource->about();
 			trigger_error(__('The section associated with the data source <code>%s</code> could not be found.', array($about['name'])), E_USER_ERROR);
 		}
@@ -113,10 +150,10 @@ Class UnionDatasource extends Datasource {
 
 				else $value = $filter;
 
-				if(!isset($this->field_pool[$field_id]) || !is_object($this->field_pool[$field_id]))
-					$this->field_pool[$field_id] =& $this->entryManager->fieldManager->fetch($field_id);
+				if(!isset(self::$field_pool[$field_id]) || !is_object(self::$field_pool[$field_id]))
+					self::$field_pool[$field_id] =& self::$entryManager->fieldManager->fetch($field_id);
 
-				if($field_id != 'id' && $field_id != 'system:date' && !($this->field_pool[$field_id] instanceof Field)){
+				if($field_id != 'id' && $field_id != 'system:date' && !(self::$field_pool[$field_id] instanceof Field)){
 					throw new Exception(
 						__(
 							'Error creating field object with id %1$d, for filtering in data source "%2$s". Check this field exists.',
@@ -141,23 +178,23 @@ Class UnionDatasource extends Datasource {
 				else{
 					// For deprecated reasons, call the old, typo'd function name until the switch to the
 					// properly named buildDSRetrievalSQL function.
-					if(!$this->field_pool[$field_id]->buildDSRetrivalSQL($value, $joins, $where, ($filter_type == DS_FILTER_AND ? true : false))){ $this->_force_empty_result = true; return; }
-					if(!$group) $group = $this->field_pool[$field_id]->requiresSQLGrouping();
+					if(!self::$field_pool[$field_id]->buildDSRetrivalSQL($value, $joins, $where, ($filter_type == DS_FILTER_AND ? true : false))){ $this->_force_empty_result = true; return; }
+					if(!$group) $group = self::$field_pool[$field_id]->requiresSQLGrouping();
 				}
 			}
 		}
 
-		if($datasource->dsParamSORT == 'system:id') $this->entryManager->setFetchSorting('id', $datasource->dsParamORDER);
-		elseif($this->dsParamSORT == 'system:date') $this->entryManager->setFetchSorting('date', $datasource->dsParamORDER);
-		else $this->entryManager->setFetchSorting($this->entryManager->fieldManager->fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource()), $datasource->dsParamORDER);
+		if($datasource->dsParamSORT == 'system:id') self::$entryManager->setFetchSorting('id', $datasource->dsParamORDER);
+		elseif($this->dsParamSORT == 'system:date') self::$entryManager->setFetchSorting('date', $datasource->dsParamORDER);
+		else self::$entryManager->setFetchSorting(self::$entryManager->fieldManager->fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource()), $datasource->dsParamORDER);
 
 		// combine INCLUDEDELEMENTS and PARAMOUTPUT into an array of field names
 		$datasource_schema = $datasource->dsParamINCLUDEDELEMENTS;
 		if (!is_array($datasource_schema)) $datasource_schema = array();
 		if ($datasource->dsParamPARAMOUTPUT) $datasource_schema[] = $datasource->dsParamPARAMOUTPUT;
-		if ($datasource->dsParamGROUP) $datasource_schema[] = $this->entryManager->fieldManager->fetchHandleFromID($datasource->dsParamGROUP);
+		if ($datasource->dsParamGROUP) $datasource_schema[] = self::$entryManager->fieldManager->fetchHandleFromID($datasource->dsParamGROUP);
 
-		$entries = $this->entryManager->fetchByPage(
+		$entries = self::$entryManager->fetchByPage(
 			1,
 			$datasource->getSource(),
 			NULL,
@@ -225,13 +262,7 @@ Class UnionDatasource extends Datasource {
 			if(ctype_digit($x)) {
 				return $x > $y;
 			}
-			else
-				$order = strnatcmp($x, $y);
-
-				if($order === 1) return -1;
-				else if ($order === -1) return 1;
-
-				return $order;
+			else return strnatcmp($y, $x);
 		}
 	}
 
@@ -261,7 +292,7 @@ Class UnionDatasource extends Datasource {
 		}
 
 		foreach($this->datasources as $handle => $ds) {
-			if(!$section = $this->entryManager->sectionManager->fetch($ds['datasource']->getSource())){
+			if(!$section = self::$entryManager->sectionManager->fetch($ds['datasource']->getSource())){
 				$about = $ds['datasource']->about();
 				trigger_error(__('The section associated with the data source <code>%s</code> could not be found.', array($about['name'])), E_USER_ERROR);
 			}
@@ -297,13 +328,14 @@ Class UnionDatasource extends Datasource {
 			}
 
 			foreach($data as $field_id => $values){
-				if(!isset($this->field_pool[$field_id]) || !is_object($this->field_pool[$field_id]))
-					$this->field_pool[$field_id] =& $this->entryManager->fieldManager->fetch($field_id);
+				if(!isset(self::$field_pool[$field_id]) || !self::$field_pool[$field_id] instanceof Field) {
+					self::$field_pool[$field_id] =& self::$entryManager->fieldManager->fetch($field_id);
+				}
 
-				if(isset($datasource->dsParamPARAMOUTPUT) && $datasource->dsParamPARAMOUTPUT == $this->field_pool[$field_id]->get('element_name')){
+				if(isset($datasource->dsParamPARAMOUTPUT) && $datasource->dsParamPARAMOUTPUT == self::$field_pool[$field_id]->get('element_name')){
 					if(!isset($param_pool[$key]) || !is_array($param_pool[$key])) $param_pool[$key] = array();
 
-					$param_pool_values = $this->field_pool[$field_id]->getParameterPoolValue($values);
+					$param_pool_values = self::$field_pool[$field_id]->getParameterPoolValue($values);
 
 					if(is_array($param_pool_values)){
 						$param_pool[$key] = array_merge($param_pool_values, $param_pool[$key]);
@@ -315,8 +347,8 @@ Class UnionDatasource extends Datasource {
 
 				foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 					list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
-					if($this->field_pool[$field_id]->get('element_name') == $handle) {
-						$this->field_pool[$field_id]->appendFormattedElement($xEntry, $values, ($datasource->dsParamHTMLENCODE ? true : false), $mode, $entry->get('id'));
+					if(self::$field_pool[$field_id]->get('element_name') == $handle) {
+						self::$field_pool[$field_id]->appendFormattedElement($xEntry, $values, ($datasource->dsParamHTMLENCODE ? true : false), $mode, $entry->get('id'));
 					}
 				}
 			}

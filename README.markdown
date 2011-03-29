@@ -14,7 +14,7 @@ Install this extension. Actual installation/enabling isn't strictly required, ju
 
 You now need to customise each datasource you want to cache. This will render the DS un-editable through the Data Source Editor (Blueprints > Components) but it's a small price to pay. If you're technically advanced to be using this extension in the first place, I'm assuming you're comfortable editing data sources by hand anyway.
 
-1. Create your normal datasources as usual, you can apply any filtering and sorting here as you please. Don't forget to select your included elements. You will need to set these Datasources to not paginate if you require pagination.
+1. Create your normal datasources as usual, you can apply any filtering and sorting here as you please. Don't forget to select your included elements. Any pagination on these datasources will be ignored.
 
 2. Create another datasource which will become the 'union' of the other datasources you previously created. On the Datasource Editor the only values that this extension will use is the Name and the Pagination (including the `system:pagination` element). Once you create this datasource, open it up in your editor and include the `UnionDatasource` class at the top of your data source:
 
