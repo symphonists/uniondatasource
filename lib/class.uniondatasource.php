@@ -90,10 +90,12 @@ Class UnionDatasource extends Datasource {
 		// Loop over all the datasource objects, getting the Entry ID's
 		foreach($this->datasources as $handle => $datasource) {
 			$entries = $this->grab_entries($datasource['datasource']);
-			$this->datasources[$handle]['entries'] = $this->getEntryIDs($entries['records']);
+			if(is_array($entries) && !empty($entries)) {
+				$this->datasources[$handle]['entries'] = $this->getEntryIDs($entries['records']);
 
-			$this->entry_objects['entries'] = array_merge($this->entry_objects['entries'], $entries['records']);
-			$this->entry_objects['total-entries'] = $this->entry_objects['total-entries'] + $entries['total-entries'];
+				$this->entry_objects['entries'] = array_merge($this->entry_objects['entries'], $entries['records']);
+				$this->entry_objects['total-entries'] = $this->entry_objects['total-entries'] + $entries['total-entries'];
+			}
 		}
 
 		// Get the SORT field that should be used
