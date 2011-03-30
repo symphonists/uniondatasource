@@ -322,6 +322,7 @@ Class UnionDatasource extends Datasource {
 			}
 
 			$xEntry->setAttribute('section-handle', $section->get('handle'));
+			$key = 'ds-' . $datasource->dsParamROOTELEMENT;
 
 			if(isset($datasource->dsParamPARAMOUTPUT)){
 				if($datasource->dsParamPARAMOUTPUT == 'system:id') $param_pool[$key][] = $entry->get('id');
