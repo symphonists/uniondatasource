@@ -87,31 +87,27 @@ Class UnionDatasource extends Datasource {
 			$this->sort[$sort_field_id] = str_replace('`', '', $matches[1]);
 		}
 
+		$this->data = array();
 		// Loop over all the datasource objects, getting the Entry ID's
 		foreach($this->datasources as $handle => $datasource) {
-			$entries = $this->grab_entries($datasource['datasource']);
-			if(is_array($entries) && !empty($entries)) {
-				$this->datasources[$handle]['entries'] = $this->getEntryIDs($entries['records']);
-
-				$this->entry_objects['entries'] = array_merge($this->entry_objects['entries'], $entries['records']);
-				$this->entry_objects['total-entries'] = $this->entry_objects['total-entries'] + $entries['total-entries'];
-			}
+			$data = $this->grab_sql($datasource['datasource']);
+			$this->data = array_merge_recursive($this->data, $data);
 		}
 
-		// Get the SORT field that should be used
-		usort($this->entry_objects['entries'], array($this, 'sortEntries'));
+		$entries = $this->fetchByPage(1, $this->dsParamLimit);
 
 		// Apply the pagination of this datasource
 		if($this->dsParamPAGINATERESULTS == 'yes') {
+			/*
 			$this->entry_objects['entries'] = array_slice(
 				$this->entry_objects['entries'],
 				($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
 				$this->dsParamLIMIT,
 				true
-			);
+			);*/
 		}
 
-		return $this->output($param_pool);
+		return $this->output($entries, $param_pool);
 	}
 
 	/**
@@ -127,7 +123,7 @@ Class UnionDatasource extends Datasource {
 	 * @return array
 	 *  An array of Entry objects for the given `$datasource`
 	 */
-	public function grab_entries(Datasource $datasource) {
+	public function grab_sql(Datasource $datasource) {
 		$where = NULL;
 		$joins = NULL;
 		$group = false;
@@ -186,9 +182,50 @@ Class UnionDatasource extends Datasource {
 			}
 		}
 
-		if($datasource->dsParamSORT == 'system:id') self::$entryManager->setFetchSorting('id', $datasource->dsParamORDER);
-		elseif($this->dsParamSORT == 'system:date') self::$entryManager->setFetchSorting('date', $datasource->dsParamORDER);
-		else self::$entryManager->setFetchSorting(self::$entryManager->fieldManager->fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource()), $datasource->dsParamORDER);
+		/**
+		 * Instead of building Entries individually, build the where and join statements
+		 * and return them. We'll make a custom `fetchByPage` function that can return
+		 * the entry ID's and the values of the sort field.
+		 *
+		 * Hopefully, we can customise the SQL that much so that the ordering is done
+		 * by calling the buildSortingSQL function on each of the sort fields, which
+		 * will create a massive ORDER BY clause so that we can do pagination as if it
+		 * was a single datasource.
+		 *
+		 * We need - section, sort, where, joins.
+		 */
+
+		$data = array(
+			'section' => array(
+				$datasource->getSource() => array()
+			),
+			'sort' => ''
+		);
+
+		// SORTING
+		// @todo support RAND()
+		$sort_field = null;
+		if($datasource->dsParamSORT == 'system:id') {
+			$data['sort'] = 'ORDER BY `e`.`id` ' . $datasource->dsParamORDER;
+			$sort_field = '`id`';
+		}
+		else if($this->dsParamSORT == 'system:date') {
+			$data['sort'] = 'ORDER BY `e`.`creation_date` ' . $datasource->dsParamORDER;
+			$sort_field = '`creation_date`';
+		}
+		else {
+			$field = self::$entryManager->fieldManager->fetch(
+				 self::$entryManager->fieldManager->fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource())
+			);
+
+			$field->buildSortingSQL($joins, $where, $data['sort'], $datasource->dsParamORDER);
+
+			// We just want the column that the field uses internally to sort by with MySQL
+			// We'll use this field and sort in PHP instead
+			preg_match('/ORDER BY (`ed`\..*) (ASC|DESC)$/i', $data['sort'], $sort_field);
+
+			$data['sort'] = preg_replace('/`ed`\./', '', $data['sort']);
+		}
 
 		// combine INCLUDEDELEMENTS and PARAMOUTPUT into an array of field names
 		$datasource_schema = $datasource->dsParamINCLUDEDELEMENTS;
@@ -196,6 +233,19 @@ Class UnionDatasource extends Datasource {
 		if ($datasource->dsParamPARAMOUTPUT) $datasource_schema[] = $datasource->dsParamPARAMOUTPUT;
 		if ($datasource->dsParamGROUP) $datasource_schema[] = self::$entryManager->fieldManager->fetchHandleFromID($datasource->dsParamGROUP);
 
+		$data['section'][$datasource->getSource()] = $datasource_schema;
+		$data['sql'] = sprintf("
+				SELECT `e`.id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date` %s
+				FROM `tbl_entries` AS `e`
+				%s
+				WHERE `e`.`section_id` = %d
+				%s
+			",
+			", " .$sort_field[1], $joins, $datasource->getSource(), $where
+		);
+
+		return $data;
+/*
 		$entries = self::$entryManager->fetchByPage(
 			1,
 			$datasource->getSource(),
@@ -206,66 +256,7 @@ Class UnionDatasource extends Datasource {
 			$datasource_schema
 		);
 
-		return $entries;
-	}
-
-	/**
-	 * Given an array of Entry objects, this function will
-	 * return an array of Entry ID's
-	 *
-	 * @param array $entries
-	 *  An array of Entry objects
-	 * @return array
-	 *  An array of Entry ID's
-	 */
-	public function getEntryIDs(Array $entries) {
-		$ids = array();
-
-		foreach($entries as $entry) {
-			$ids[] = $entry->get('id');
-		}
-
-		return $ids;
-	}
-
-	/**
-	 * Given two `Entry` objects, this function will preform sorting on the
-	 * data for the `Entry` objects using either < or `strnatcmp`. This function
-	 * takes into account the current datasource's sort direction
-	 *
-	 * @param Entry $a
-	 * @param Entry $b
-	 * @return 0, -1 or 1
-	 */
-	public function sortEntries($a, $b) {
-		$a = $a->getData();
-		$b = $b->getData();
-
-		$x = $y = null;
-
-		foreach($this->sort as $sort_field_id => $sort_column) {
-			if(array_key_exists($sort_field_id, $a)) {
-				$x = $a[$sort_field_id][$sort_column];
-			}
-
-			if(array_key_exists($sort_field_id, $b)) {
-				$y = $b[$sort_field_id][$sort_column];
-			}
-		}
-
-		// This is horrible...
-		if($this->dsParamORDER == "desc") {
-			if(ctype_digit($x)) {
-				return $x < $y;
-			}
-			else return strnatcmp($x, $y);
-		}
-		else {
-			if(ctype_digit($x)) {
-				return $x > $y;
-			}
-			else return strnatcmp($y, $x);
-		}
+		return $entries;*/
 	}
 
 	/**
@@ -276,7 +267,7 @@ Class UnionDatasource extends Datasource {
 	 *
 	 * @param array $param_pool
 	 */
-	public function output(&$param_pool) {
+	public function output($entries, &$param_pool) {
 		$result = new XMLElement($this->dsParamROOTELEMENT);
 
 		// Add Pagination
@@ -306,7 +297,7 @@ Class UnionDatasource extends Datasource {
 			);
 		}
 
-		foreach($this->entry_objects['entries'] as $entry) {
+		foreach($entries as $entry) {
 			$datasource = null;
 			$data = $entry->getData();
 
@@ -315,7 +306,7 @@ Class UnionDatasource extends Datasource {
 
 			// Set the appropriate datasource for this entry
 			foreach($this->datasources as $ds) {
-				if(!in_array($entry->get('id'), $ds['entries'])) continue;
+				if($entry->get('section_id') !== $ds['datasource']->getSource()) continue;
 
 				$datasource = $ds['datasource'];
 				$section = $ds['section'];
@@ -348,7 +339,7 @@ Class UnionDatasource extends Datasource {
 					}
 				}
 
-				foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
+				if(is_array($datasource->dsParamINCLUDEDELEMENTS)) foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 					list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
 					if(self::$field_pool[$field_id]->get('element_name') == $handle) {
 						self::$field_pool[$field_id]->appendFormattedElement($xEntry, $values, ($datasource->dsParamHTMLENCODE ? true : false), $mode, $entry->get('id'));
@@ -369,5 +360,201 @@ Class UnionDatasource extends Datasource {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Returns an array of Entry objects, with some basic pagination given
+	 * the number of Entry's to return and the current starting offset. For instance,
+	 * if there are 60 entries in a section and the pagination
+	 * dictates that per page, 15 entries are to be returned, by passing 2 to
+	 * the $page parameter you could return entries 15-30
+	 *
+	 * @param integer $page
+	 *  The page to return, defaults to 1
+	 * @param integer $entriesPerPage
+	 *  The number of entries to return per page.
+	 * @return array
+	 *  Either an array of Entry objects, or an associative array containing
+	 *  the total entries, the start position, the entries per page and the
+	 *  Entry objects
+	 */
+	public function fetchByPage($page = 1, $entriesPerPage) {
+		$group = false;
+		$joins = '';
+		$wheres = '';
+		$order = '';
+
+		/**
+		 * UNION all the queries together, then sort on the sort column
+		 * Use SQL_CALC_ROWS to calculate the total rows for use in pagination
+		 * Apply any pagination
+		 * Return the entry_id
+		 * Pass the entry_id's through a buildEntries style function (biggest
+		 * change is that it shouldn't be tied to a single section)
+		 * When building the XML of each of the entries, add the section-handle to the entry
+		 * Create the Pagination element
+		 * Output XML and dance!!!!
+		 */
+
+		$sql = implode(" UNION ALL ", $this->data['sql']);
+
+		// Add the ORDER BY clause
+		$sql = $sql . $this->data['sort'][0];
+		$rows = Symphony::Database()->fetch($sql);
+
+		// Build Entry objects
+		return $this->buildEntries($rows, $this->data['section']);
+
+		//return ($buildentries && (is_array($rows) && !empty($rows)) ? $this->__buildEntries($rows, $section_id, $element_names) : $rows);
+
+
+	}
+
+	/**
+	 * Given an array of Entry ID's and a section ID, return an array of Entry
+	 * objects. For performance reasons, it's possible to pass an array of field
+	 * names so that only a subset of the section will be queried. Do not pass
+	 * this function ID values from across more than one section.
+	 *
+	 * @param array $id_list
+	 *  An array of ID's
+	 * @param integer $section_id
+	 *  The section ID of the entries in the `$id_list`
+	 * @param array $element_names
+	 *  Choose whether to get data from a subset of fields or all fields in a section,
+	 *  by providing an array of field names. Defaults to null, which will load data
+	 *  from all fields in a section.
+	 * @return array
+	 */
+	public function buildEntries(Array $id_list, $element_names = null){
+		$entries = array();
+
+		if (empty($id_list)) return $entries;
+
+		$field_names = array();
+
+		// choose whether to get data from a subset of fields or all fields in a section
+		if (!is_null($element_names) && is_array($element_names)){
+			// allow for pseudo-fields containing colons (e.g. Textarea formatted/unformatted)
+			foreach ($element_names as $section_id => $fields) {
+				foreach($fields as $index => $name) {
+					$parts = explode(':', $name, 2);
+
+					if(count($parts) == 1) continue;
+
+					unset($element_names[$section_id][$index]);
+
+					if($parts[0] == "system") continue;
+
+					$element_names[$section_id][$index] = trim($parts[1]);
+				}
+
+				$schema_sql[] = sprintf(
+					"SELECT `id` FROM `tbl_fields` WHERE `parent_section` = %d AND `element_name` IN ('%s')",
+					$section_id,
+					implode("', '", array_unique($element_names[$section_id]))
+				);
+			}
+		}
+		else {
+			// allow for pseudo-fields containing colons (e.g. Textarea formatted/unformatted)
+			foreach ($element_names as $section_id => $fields) {
+				$schema_sql[] = sprintf(
+					"SELECT `id` FROM `tbl_fields` WHERE `parent_section` = %d",
+					$section_id
+				);
+			}
+		}
+
+		$schema = array();
+		foreach($schema_sql as $sql) {
+			$fields = Symphony::Database()->fetch($sql);
+			$schema = array_merge($schema, Symphony::Database()->fetch($sql));
+		}
+
+		$tmp = array();
+		foreach ($id_list as $r) {
+			$tmp[$r['id']] = $r;
+		}
+		$id_list = $tmp;
+
+		$raw = array();
+
+		$id_list_string = implode("', '", array_keys($id_list));
+
+		// Append meta data:
+		foreach ($id_list as $entry_id => $entry) {
+			$raw[$entry_id]['meta'] = $entry;
+		}
+
+		// Append field data:
+		foreach ($schema as $f) {
+			$field_id = $f['id'];
+
+			try{
+				$row = Symphony::Database()->fetch("SELECT * FROM `tbl_entries_data_{$field_id}` WHERE `entry_id` IN ('$id_list_string') ORDER BY `id` ASC");
+			}
+			catch(Exception $e){
+				// No data due to error
+				continue;
+			}
+
+			if (!is_array($row) || empty($row)) continue;
+
+			foreach ($row as $r) {
+				$entry_id = $r['entry_id'];
+
+				unset($r['id']);
+				unset($r['entry_id']);
+
+				if (!isset($raw[$entry_id]['fields'][$field_id])) {
+					$raw[$entry_id]['fields'][$field_id] = $r;
+				}
+
+				else {
+					foreach (array_keys($r) as $key) {
+						if (isset($raw[$entry_id]['fields'][$field_id][$key]) && !is_array($raw[$entry_id]['fields'][$field_id][$key])) {
+							$raw[$entry_id]['fields'][$field_id][$key] = array($raw[$entry_id]['fields'][$field_id][$key], $r[$key]);
+						}
+
+						else if (!isset($raw[$entry_id]['fields'][$field_id][$key])) {
+							$raw[$entry_id]['fields'][$field_id] = array($r[$key]);
+						}
+
+						else {
+							$raw[$entry_id]['fields'][$field_id][$key][] = $r[$key];
+						}
+					}
+				}
+			}
+		}
+
+		// Need to restore the correct ID ordering
+		$tmp = array();
+
+		foreach (array_keys($id_list) as $entry_id) {
+			$tmp[$entry_id] = $raw[$entry_id];
+		}
+
+		$raw = $tmp;
+
+		$fieldPool = array();
+
+		foreach ($raw as $entry) {
+			$obj = self::$entryManager->create();
+
+			$obj->creationDate = DateTimeObj::get('c', $entry['meta']['creation_date']);
+			$obj->set('id', $entry['meta']['id']);
+			$obj->set('author_id', $entry['meta']['author_id']);
+			$obj->set('section_id', $entry['meta']['section_id']);
+
+			if(isset($entry['fields']) && is_array($entry['fields'])){
+				foreach ($entry['fields'] as $field_id => $data) $obj->setData($field_id, $data);
+			}
+
+			$entries[] = $obj;
+		}
+
+		return $entries;
 	}
 }
