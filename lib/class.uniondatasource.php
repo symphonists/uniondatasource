@@ -29,27 +29,8 @@ Class UnionDatasource extends Datasource {
 	protected $datasources = array();
 
 	/**
-	 * An array containing all the `Entry` objects and the total number of
-	 * entries considered for the union.
-	 * @var array
-	 */
-	protected $entry_objects = array(
-		'entries' => array(),
-		'total-entries' => 0
-	);
-
-	/**
-	 * An associative array, with the key being the Sort `field_id` and the value
-	 * being the column name that the Field internally uses to sort on in the SQL
-	 * @var array
-	 */
-	protected $sort = array();
-
-	/**
 	 * Called from the Datasource, this function will loop over `dsParamUNION`
-	 * and create new Datasource objects. The `dsParamSORT` for each of these
-	 * datasources will be evaluated to get the `field_id` and the internal column
-	 * that the field uses to do sorting.
+	 * and create new Datasource objects.
 	 *
 	 * @param array $param_pool
 	 * @return XMLElement
@@ -65,26 +46,13 @@ Class UnionDatasource extends Datasource {
 
 		// Loop over all the unions and get a Datasource object
 		foreach($this->dsParamUNION as $handle) {
-			$this->datasources[$handle] = array(
-				'datasource' => self::$datasourceManager->create(str_replace('-','_', $handle), array(), true),
-				'entries' => array()
+			$this->datasources[$handle]['datasource'] = self::$datasourceManager->create(
+				str_replace('-','_', $handle), array(), true
 			);
 
-			$ds = $this->datasources[$handle]['datasource'];
-			$sort_field_id = self::$entryManager->fieldManager->fetchFieldIDFromElementName($ds->dsParamSORT, $ds->getSource());
-
-			if(!isset(self::$field_pool[$sort_field_id]) || !self::$field_pool[$sort_field_id] instanceof Field) {
-				self::$field_pool[$sort_field_id] = self::$entryManager->fieldManager->fetch($sort_field_id);
-			}
-
-			$joins = $where = $sort = "";
-			self::$field_pool[$sort_field_id]->buildSortingSQL($joins, $where, $sort);
-
-			// We just want the column that the field uses internally to sort by with MySQL
-			// We'll use this field and sort in PHP instead
-			preg_match('/ORDER BY `ed`\.(.*) (ASC|DESC)$/', $sort, $matches);
-
-			$this->sort[$sort_field_id] = str_replace('`', '', $matches[1]);
+			$this->datasources[$handle]['section'] = self::$entryManager->sectionManager->fetch(
+				$this->datasources[$handle]['datasource']->getSource()
+			);
 		}
 
 		$this->data = array();
@@ -96,17 +64,6 @@ Class UnionDatasource extends Datasource {
 
 		$entries = $this->fetchByPage(1, $this->dsParamLimit);
 
-		// Apply the pagination of this datasource
-		if($this->dsParamPAGINATERESULTS == 'yes') {
-			/*
-			$this->entry_objects['entries'] = array_slice(
-				$this->entry_objects['entries'],
-				($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
-				$this->dsParamLIMIT,
-				true
-			);*/
-		}
-
 		return $this->output($entries, $param_pool);
 	}
 
@@ -116,8 +73,6 @@ Class UnionDatasource extends Datasource {
 	 * The majority of this code is sliced from Symphony's `datasource.section.php` file.
 	 *
 	 * @todo Check Grouping
-	 * @todo Check Pagination
-	 * @todo Check Filtering
 	 *
 	 * @param Datasource $datasource
 	 * @return array
@@ -186,15 +141,7 @@ Class UnionDatasource extends Datasource {
 		 * Instead of building Entries individually, build the where and join statements
 		 * and return them. We'll make a custom `fetchByPage` function that can return
 		 * the entry ID's and the values of the sort field.
-		 *
-		 * Hopefully, we can customise the SQL that much so that the ordering is done
-		 * by calling the buildSortingSQL function on each of the sort fields, which
-		 * will create a massive ORDER BY clause so that we can do pagination as if it
-		 * was a single datasource.
-		 *
-		 * We need - section, sort, where, joins.
 		 */
-
 		$data = array(
 			'section' => array(
 				$datasource->getSource() => array()
@@ -245,26 +192,16 @@ Class UnionDatasource extends Datasource {
 		);
 
 		return $data;
-/*
-		$entries = self::$entryManager->fetchByPage(
-			1,
-			$datasource->getSource(),
-			NULL,
-			$where, $joins, $group,
-			false,
-			true,
-			$datasource_schema
-		);
-
-		return $entries;*/
 	}
 
 	/**
-	 * Called to take the `$this->entry_objects` and output them as XML. This uses
-	 * the Entry datasources, not this datasource to create Parameters and loop over
-	 * `dsParamINCLUDEDELEMENTS`. The majority of this code is sliced from Symphony's
-	 * `datasource.section.php` file.
+	 * Given an associative array containing the total rows that could be found
+	 * for these datasources, and an array of Entries for the current pagination
+	 * settings, output the Entries as XML. This uses the Entry datasources, not
+	 * this datasource to create Parameters and uses their `dsParamINCLUDEDELEMENTS`.
+	 * The majority of this code is sliced from Symphony's `datasource.section.php` file.
 	 *
+	 * @param array $entries
 	 * @param array $param_pool
 	 */
 	public function output($entries, &$param_pool) {
@@ -273,8 +210,8 @@ Class UnionDatasource extends Datasource {
 		// Add Pagination
 		if(is_array($this->dsParamINCLUDEDELEMENTS) && in_array('system:pagination', $this->dsParamINCLUDEDELEMENTS)) {
 			$pagination_element = General::buildPaginationElement(
-				$this->entry_objects['total-entries'],
-				max(1, ceil($this->entry_objects['total-entries'] * (1 / $this->dsParamLIMIT))),
+				$entries['total-entries'],
+				max(1, ceil($entries['total-entries'] * (1 / $this->dsParamLIMIT))),
 				$this->dsParamLIMIT,
 				$this->dsParamSTARTPAGE
 			);
@@ -284,20 +221,16 @@ Class UnionDatasource extends Datasource {
 			}
 		}
 
-		foreach($this->datasources as $handle => $ds) {
-			if(!$section = self::$entryManager->sectionManager->fetch($ds['datasource']->getSource())){
-				$about = $ds['datasource']->about();
-				trigger_error(__('The section associated with the data source <code>%s</code> could not be found.', array($about['name'])), E_USER_ERROR);
-			}
-
-			$this->datasources[$handle]['section'] = $section;
-
+		foreach($this->datasources as $handle => $datasource) {
 			$result->appendChild(
-				new XMLElement('section', $section->get('name'), array('id' => $section->get('id'), 'handle' => $section->get('handle')))
+				new XMLElement('section', $datasource['section']->get('name'), array(
+					'id' => $datasource['section']->get('id'),
+					'handle' => $datasource['section']->get('handle')
+				))
 			);
 		}
 
-		foreach($entries as $entry) {
+		foreach($entries['records'] as $entry) {
 			$datasource = null;
 			$data = $entry->getData();
 
@@ -367,7 +300,7 @@ Class UnionDatasource extends Datasource {
 	 * the number of Entry's to return and the current starting offset. For instance,
 	 * if there are 60 entries in a section and the pagination
 	 * dictates that per page, 15 entries are to be returned, by passing 2 to
-	 * the $page parameter you could return entries 15-30
+	 * the $page parameter you could return entries 15-30.
 	 *
 	 * @param integer $page
 	 *  The page to return, defaults to 1
@@ -384,9 +317,9 @@ Class UnionDatasource extends Datasource {
 		$wheres = '';
 		$order = '';
 
+		if(empty($this->data['sql'])) return array();
+
 		/**
-		 * UNION all the queries together, then sort on the sort column
-		 * Use SQL_CALC_ROWS to calculate the total rows for use in pagination
 		 * Apply any pagination
 		 * Return the entry_id
 		 * Pass the entry_id's through a buildEntries style function (biggest
@@ -395,19 +328,30 @@ Class UnionDatasource extends Datasource {
 		 * Create the Pagination element
 		 * Output XML and dance!!!!
 		 */
-
 		$sql = implode(" UNION ALL ", $this->data['sql']);
+
+		// Add SQL_CALC_FOUND_ROWS to the first SELECT.
+		$sql = preg_replace('/^SELECT `e`.id/', 'SELECT SQL_CALC_FOUND_ROWS `e`.id', $sql, 1);
 
 		// Add the ORDER BY clause
 		$sql = $sql . $this->data['sort'][0];
+
+		// Apply Pagination
+		if($this->dsParamPAGINATERESULTS == 'yes') {
+			$sql = $sql . sprintf(' LIMIT %d, %d',
+				($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
+				$this->dsParamLIMIT
+			);
+		}
+
 		$rows = Symphony::Database()->fetch($sql);
 
+		// Get the total rows for this query
+		$total_rows = Symphony::Database()->fetchCol('total_rows', 'SELECT FOUND_ROWS() AS `total_rows`');
+		$total_rows = $total_rows[0];
+
 		// Build Entry objects
-		return $this->buildEntries($rows, $this->data['section']);
-
-		//return ($buildentries && (is_array($rows) && !empty($rows)) ? $this->__buildEntries($rows, $section_id, $element_names) : $rows);
-
-
+		return $this->buildEntries($rows, $total_rows, $this->data['section']);
 	}
 
 	/**
@@ -426,7 +370,7 @@ Class UnionDatasource extends Datasource {
 	 *  from all fields in a section.
 	 * @return array
 	 */
-	public function buildEntries(Array $id_list, $element_names = null){
+	public function buildEntries(Array $id_list, $total_rows, $element_names = null){
 		$entries = array();
 
 		if (empty($id_list)) return $entries;
@@ -552,8 +496,10 @@ Class UnionDatasource extends Datasource {
 				foreach ($entry['fields'] as $field_id => $data) $obj->setData($field_id, $data);
 			}
 
-			$entries[] = $obj;
+			$entries['records'][] = $obj;
 		}
+
+		$entries['total-entries'] = $total_rows;
 
 		return $entries;
 	}
