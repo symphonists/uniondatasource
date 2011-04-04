@@ -296,11 +296,12 @@ Class UnionDatasource extends Datasource {
 	}
 
 	/**
-	 * Returns an array of Entry objects, with some basic pagination given
-	 * the number of Entry's to return and the current starting offset. For instance,
-	 * if there are 60 entries in a section and the pagination
-	 * dictates that per page, 15 entries are to be returned, by passing 2 to
-	 * the $page parameter you could return entries 15-30.
+	 * 	This function `UNION ALL`'s the datasource SQL and then applies sorting
+	 * and pagination to the query. Returns an array of Entry objects, with
+	 * pagination given the number of Entry's to return and the current starting
+	 * offset. eg. if there are 60 entries in a section and the pagination
+	 * dictates that 15 entries per page are to be returned, by passing 2 to
+	 * the `$page` parameter you could return entries 15-30.
 	 *
 	 * @param integer $page
 	 *  The page to return, defaults to 1
@@ -319,15 +320,6 @@ Class UnionDatasource extends Datasource {
 
 		if(empty($this->data['sql'])) return array();
 
-		/**
-		 * Apply any pagination
-		 * Return the entry_id
-		 * Pass the entry_id's through a buildEntries style function (biggest
-		 * change is that it shouldn't be tied to a single section)
-		 * When building the XML of each of the entries, add the section-handle to the entry
-		 * Create the Pagination element
-		 * Output XML and dance!!!!
-		 */
 		$sql = implode(" UNION ALL ", $this->data['sql']);
 
 		// Add SQL_CALC_FOUND_ROWS to the first SELECT.
@@ -355,15 +347,17 @@ Class UnionDatasource extends Datasource {
 	}
 
 	/**
-	 * Given an array of Entry ID's and a section ID, return an array of Entry
-	 * objects. For performance reasons, it's possible to pass an array of field
-	 * names so that only a subset of the section will be queried. Do not pass
-	 * this function ID values from across more than one section.
+	 * Given an array of Entry data from `tbl_entries` and a section ID, return an
+	 * array of Entry objects. For performance reasons, it's possible to pass an array
+	 * of field handles via `$element_names`, so that only a subset of the section schema
+	 * will be queried. This function currently only supports Entry from one section at a
+	 * time.
 	 *
-	 * @param array $id_list
-	 *  An array of ID's
-	 * @param integer $section_id
-	 *  The section ID of the entries in the `$id_list`
+	 * @param array $rows
+	 *  An array of Entry data from `tbl_entries` including the Entry ID, Entry section,
+	 *  the ID of the Author who created the Entry, and a Unix timestamp of creation
+	 * @param integer $total_rows
+	 *  The number of rows found without any pagination applied.
 	 * @param array $element_names
 	 *  Choose whether to get data from a subset of fields or all fields in a section,
 	 *  by providing an array of field names. Defaults to null, which will load data

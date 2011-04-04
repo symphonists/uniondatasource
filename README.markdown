@@ -5,8 +5,9 @@
 * Build Date: 2011-04-04
 * Requirements: Symphony 2.2
 
-A union datasources allows you to combine multiple datasources to output a single datasource for the
-primary purpose of a unified pagination.
+A union datasource allows you to combine multiple datasources to output as a single datasource for the
+primary purpose of a unified pagination. It requires a little bit of PHP knowledge as you'll have to
+replace some lines in the generated datasource file to make it work as you'd like.
 
 ## How do I use it?
 

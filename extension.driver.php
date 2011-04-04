@@ -12,7 +12,7 @@
 					'website' => 'http://bloodbone.ws',
 					'email' => 'brendan@bloodbone.ws'
 				),
-				'description' => 'A union datasources allows you to combine multiple datasources to output a single datasource for the
+				'description' => 'A union datasource allows you to combine multiple datasources to output as a single datasource for the
 				primary purpose of a unified pagination.'
 			);
 		}
