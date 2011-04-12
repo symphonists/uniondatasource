@@ -251,6 +251,23 @@ Class UnionDatasource extends Datasource {
 			$xEntry->setAttribute('section-handle', $section->get('handle'));
 			$key = 'ds-' . $datasource->dsParamROOTELEMENT;
 
+			// Add Associated Entry counts to the entry
+			if (!isset($datasource->dsParamASSOCIATEDENTRYCOUNTS) || $datasource->dsParamASSOCIATEDENTRYCOUNTS == 'yes') {
+				$associated_sections = $section->fetchAssociatedSections();
+
+				if (is_array($associated_sections)) {
+					$associated_entry_counts = $entry->fetchAllAssociatedEntryCounts($associated_sections);
+					if(is_array($associated_entry_counts) && !empty($associated_entry_counts)){
+						foreach($associated_entry_counts as $section_id => $count){
+							foreach($associated_sections as $section) {
+								if ($section['id'] == $section_id) $xEntry->setAttribute($section['handle'], (string)$count);
+							}
+						}
+					}
+				}
+			}
+
+			// Add the Symphony 'system:*' parameters to the param pool
 			if(isset($datasource->dsParamPARAMOUTPUT)){
 				if($datasource->dsParamPARAMOUTPUT == 'system:id') $param_pool[$key][] = $entry->get('id');
 				elseif($datasource->dsParamPARAMOUTPUT == 'system:date') $param_pool[$key][] = DateTimeObj::get('c', $entry->creationDate);
@@ -258,10 +275,12 @@ Class UnionDatasource extends Datasource {
 			}
 
 			foreach($data as $field_id => $values){
+				// Check to see if we have a Field object already, if not create one
 				if(!isset(self::$field_pool[$field_id]) || !self::$field_pool[$field_id] instanceof Field) {
 					self::$field_pool[$field_id] =& self::$entryManager->fieldManager->fetch($field_id);
 				}
 
+				// Add the Datasource's parameters to the param pool.
 				if(isset($datasource->dsParamPARAMOUTPUT) && $datasource->dsParamPARAMOUTPUT == self::$field_pool[$field_id]->get('element_name')){
 					if(!isset($param_pool[$key]) || !is_array($param_pool[$key])) $param_pool[$key] = array();
 
@@ -275,6 +294,7 @@ Class UnionDatasource extends Datasource {
 					}
 				}
 
+				// Loop over the included elements and run appendFormattedElement
 				if(is_array($datasource->dsParamINCLUDEDELEMENTS)) foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 					list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
 					if(self::$field_pool[$field_id]->get('element_name') == $handle) {
@@ -285,6 +305,7 @@ Class UnionDatasource extends Datasource {
 
 			$result->appendChild($xEntry);
 
+			// Add in the system:date to the output
 			if(in_array('system:date', $datasource->dsParamINCLUDEDELEMENTS)){
 				$xEntry->appendChild(
 					General::createXMLDateObject(
