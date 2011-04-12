@@ -406,31 +406,25 @@ Class UnionDatasource extends Datasource {
 
 		$schema = array();
 		foreach($schema_sql as $sql) {
-			$fields = Symphony::Database()->fetch($sql);
 			$schema = array_merge($schema, Symphony::Database()->fetch($sql));
 		}
 
-		$tmp = array();
-		foreach ($id_list as $r) {
-			$tmp[$r['id']] = $r;
-		}
-		$id_list = $tmp;
-
 		$raw = array();
-
-		$id_list_string = implode("', '", array_keys($id_list));
+		$id_list_string = '';
 
 		// Append meta data:
-		foreach ($id_list as $entry_id => $entry) {
-			$raw[$entry_id]['meta'] = $entry;
+		foreach ($id_list as $row) {
+			$raw[$row['id']]['meta'] = $row;
+			$id_list_string .= $row['id'] . ',';
 		}
+		$id_list_string = trim($id_list_string, ',');
 
 		// Append field data:
 		foreach ($schema as $f) {
 			$field_id = $f['id'];
 
 			try{
-				$row = Symphony::Database()->fetch("SELECT * FROM `tbl_entries_data_{$field_id}` WHERE `entry_id` IN ('$id_list_string') ORDER BY `id` ASC");
+				$row = Symphony::Database()->fetch("SELECT * FROM `tbl_entries_data_{$field_id}` WHERE `entry_id` IN ($id_list_string) ORDER BY `id` ASC");
 			}
 			catch(Exception $e){
 				// No data due to error
@@ -450,33 +444,22 @@ Class UnionDatasource extends Datasource {
 				}
 
 				else {
-					foreach (array_keys($r) as $key) {
+					foreach ($r as $key => $value) {
 						if (isset($raw[$entry_id]['fields'][$field_id][$key]) && !is_array($raw[$entry_id]['fields'][$field_id][$key])) {
-							$raw[$entry_id]['fields'][$field_id][$key] = array($raw[$entry_id]['fields'][$field_id][$key], $r[$key]);
+							$raw[$entry_id]['fields'][$field_id][$key] = array($raw[$entry_id]['fields'][$field_id][$key], $value);
 						}
 
 						else if (!isset($raw[$entry_id]['fields'][$field_id][$key])) {
-							$raw[$entry_id]['fields'][$field_id] = array($r[$key]);
+							$raw[$entry_id]['fields'][$field_id] = array($value);
 						}
 
 						else {
-							$raw[$entry_id]['fields'][$field_id][$key][] = $r[$key];
+							$raw[$entry_id]['fields'][$field_id][$key][] = $value;
 						}
 					}
 				}
 			}
 		}
-
-		// Need to restore the correct ID ordering
-		$tmp = array();
-
-		foreach (array_keys($id_list) as $entry_id) {
-			$tmp[$entry_id] = $raw[$entry_id];
-		}
-
-		$raw = $tmp;
-
-		$fieldPool = array();
 
 		foreach ($raw as $entry) {
 			$obj = self::$entryManager->create();
