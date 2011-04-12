@@ -59,7 +59,10 @@ Class UnionDatasource extends Datasource {
 		// Loop over all the datasource objects, getting the Entry ID's
 		foreach($this->datasources as $handle => $datasource) {
 			$data = $this->grab_sql($datasource['datasource']);
-			$this->data = array_merge_recursive($this->data, $data);
+
+			$this->data['section'][key($data['section'])] = current($data['section']);
+			$this->data['sort'][] = $data['sort'];
+			$this->data['sql'][] = $data['sql'];
 		}
 
 		$entries = $this->fetchByPage(1, $this->dsParamLimit);
