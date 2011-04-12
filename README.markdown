@@ -1,8 +1,8 @@
 # Union Datasource
 
-* Version: 0.2
+* Version: 0.3
 * Author: Brendan Abbott
-* Build Date: 2011-04-04
+* Build Date: 2011-04-12
 * Requirements: Symphony 2.2
 
 A union datasource allows you to combine multiple datasources to output as a single datasource for the
@@ -39,6 +39,9 @@ You now need to customise each datasource you want to cache. This will render th
 6. Add this datasource to the page that you want to output it on as normal. You do not have to add the other datasources to this page.
 
 ## Changelog
+
+* 0.3, 12 April 2011
+	* Fixed a critical bug that rendered the extension near useless. Thanks tonyarnold for discovering and help debug.
 
 * 0.2, 04 April 2011
 	* Near complete rewrite to move all pagination and sorting into the SQL instead of using PHP.
