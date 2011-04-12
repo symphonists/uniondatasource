@@ -384,7 +384,7 @@ Class UnionDatasource extends Datasource {
 
 					if($parts[0] == "system") continue;
 
-					$element_names[$section_id][$index] = trim($parts[1]);
+					$element_names[$section_id][$index] = trim($parts[0]);
 				}
 
 				$schema_sql[] = sprintf(
