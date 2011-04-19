@@ -47,7 +47,7 @@ Class UnionDatasource extends Datasource {
 		// Loop over all the unions and get a Datasource object
 		foreach($this->dsParamUNION as $handle) {
 			$this->datasources[$handle]['datasource'] = self::$datasourceManager->create(
-				str_replace('-','_', $handle), array(), true
+				str_replace('-','_', $handle), $this->_env, true
 			);
 
 			$this->datasources[$handle]['section'] = self::$entryManager->sectionManager->fetch(
