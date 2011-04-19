@@ -156,12 +156,10 @@ Class UnionDatasource extends Datasource {
 		// @todo support RAND()
 		$sort_field = null;
 		if($datasource->dsParamSORT == 'system:id') {
-			$data['sort'] = 'ORDER BY `e`.`id` ' . $datasource->dsParamORDER;
-			$sort_field = '`id`';
+			$data['sort'] = 'ORDER BY id ' . $datasource->dsParamORDER;
 		}
-		else if($this->dsParamSORT == 'system:date') {
-			$data['sort'] = 'ORDER BY `e`.`creation_date` ' . $datasource->dsParamORDER;
-			$sort_field = '`creation_date`';
+		else if($datasource->dsParamSORT == 'system:date') {
+			$data['sort'] = 'ORDER BY creation_date ' . $datasource->dsParamORDER;
 		}
 		else {
 			$field = self::$entryManager->fieldManager->fetch(
@@ -185,13 +183,12 @@ Class UnionDatasource extends Datasource {
 
 		$data['section'][$datasource->getSource()] = $datasource_schema;
 		$data['sql'] = sprintf("
-				SELECT `e`.id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date` %s
+				SELECT `e`.id as id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date`%s
 				FROM `tbl_entries` AS `e`
 				%s
 				WHERE `e`.`section_id` = %d
 				%s
-			",
-			", " .$sort_field[1], $joins, $datasource->getSource(), $where
+			", (is_array($sort_field) ? ', ' . $sort_field[1] : ''), $joins, $datasource->getSource(), $where
 		);
 
 		return $data;
