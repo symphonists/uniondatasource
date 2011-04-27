@@ -67,6 +67,22 @@ Class UnionDatasource extends Datasource {
 
 		$entries = $this->fetchByPage(1, $this->dsParamLimit);
 
+		/**
+		 * Immediately after building entries allow modification of the Data Source entry list
+		 *
+		 * @delegate DataSourceEntriesBuilt
+		 * @param string $context
+		 * '/frontend/'
+		 * @param Datasource $datasource
+		 * @param array $entries
+		 * @param array $filters
+		 */
+		Symphony::ExtensionManager()->notifyMembers('DataSourceEntriesBuilt', '/frontend/', array(
+			'datasource' => &$this,
+			'entries' => &$entries,
+			'filters' => $this->dsParamFILTERS
+		));
+
 		return $this->output($entries, $param_pool);
 	}
 
