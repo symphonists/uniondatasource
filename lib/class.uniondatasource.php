@@ -26,7 +26,7 @@ Class UnionDatasource extends Datasource {
 	 * This has two keys, `datasource` and `entries`
 	 * @var array
 	 */
-	protected $datasources = array();
+	public $datasources = array();
 
 	/**
 	 * Called from the Datasource, this function will loop over `dsParamUNION`
