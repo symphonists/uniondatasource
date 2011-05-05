@@ -237,7 +237,7 @@
 			$fieldset->setAttribute('class', 'settings');
 			$fieldset->appendChild(new XMLElement('legend', __('Datasources')));
 
-			$p = new XMLElement('p', __('These datasources will have their output combined into a single datasource.'));
+			$p = new XMLElement('p', __('These datasources will have their output combined into a single datasource and executed in this order.'));
 			$p->setAttribute('class', 'help contextual');
 			$fieldset->appendChild($p);
 
@@ -297,7 +297,7 @@
 			$fieldset->setAttribute('class', 'settings contextual');
 			$fieldset->appendChild(new XMLElement('legend', __('Sorting and Limiting')));
 
-			$p = new XMLElement('p', __('Use <code>{$param}</code> syntax to limit by page parameters. All sorting is defined by the first datasource in the union.'));
+			$p = new XMLElement('p', __('Use <code>{$param}</code> syntax to limit by page parameters. <br />All sorting is defined by the first datasource in the union.'));
 			$p->setAttribute('class', 'help contextual');
 			$fieldset->appendChild($p);
 

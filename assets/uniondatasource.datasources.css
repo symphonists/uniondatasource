@@ -1,36 +1,7 @@
-body {
-	overflow-y: scroll;
+ol.union-duplicator > .instance {
+	border-bottom: none;
 }
 
-div.section {
-	border: 1px solid #ccc;
-	float: left;
-	width: 300px;
-}
-
-div.column {
-	float: left;
-	width: 302px;
-	margin-right: 20px;
-	overflow: hidden;
-}
-
-div.section h3 {
-	display: block;
-	width: auto;
-	padding: 5px;
-	border-bottom: 1px solid #ccc;
-	background-color: #eee;
-	margin: 0;
-	overflow: hidden;
-}
-
-div.section ul {
-	list-style-type: none;
-	margin: 0;
-}
-
-div.section li {
-	border-bottom: 1px solid #eee;
-	padding: 5px;
+ol.union-duplicator > .instance > .content {
+	padding: 0;
 }
