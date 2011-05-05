@@ -247,7 +247,7 @@
 			$div->appendChild($p);
 
 			$ol = new XMLElement('ol');
-			$ol->setAttribute('class', 'filters-duplicator');
+			$ol->setAttribute('class', 'union-duplicator');
 
 			foreach($datasources as $handle => $datasource) {
 				$about = $datasource->about();
@@ -261,6 +261,12 @@
 					$wrapper->appendChild(
 						Widget::Input('fields[union][]', $handle, 'hidden')
 					);
+					$wrapper->appendChild(
+						Widget::Input('fields[union-sort][]', $datasource->dsParamSORT, 'hidden')
+					);
+					$wrapper->appendChild(
+						Widget::Input('fields[union-order][]', $datasource->dsParamORDER, 'hidden')
+					);
 					$ol->appendChild($wrapper);
 				}
 
@@ -271,6 +277,12 @@
 				$wrapper->appendChild(new XMLElement('h4', $about['name']));
 				$wrapper->appendChild(
 					Widget::Input('fields[union][]', $handle, 'hidden')
+				);
+				$wrapper->appendChild(
+					Widget::Input('fields[union-sort][]', $datasource->dsParamSORT, 'hidden')
+				);
+				$wrapper->appendChild(
+					Widget::Input('fields[union-order][]', $datasource->dsParamORDER, 'hidden')
 				);
 				$ol->appendChild($wrapper);
 			}
@@ -295,6 +307,7 @@
 			$label = Widget::Label(__('Sort By'));
 
 			$options = array();
+/*
 			foreach($datasources as $handle => $datasource) {
 				if(isset($existing->dsParamUNION) && !in_array($handle, $existing->dsParamUNION)) continue;
 
@@ -322,8 +335,11 @@
 					'options' => $optoptions
 				);
 			}
-
-			$label->appendChild(Widget::Select('fields[sort]', $options, array('disabled' => 'disabled')));
+*/
+			$label->appendChild(Widget::Select('fields[sort]', $options, array(
+				'class' => 'sort-by',
+				'disabled' => 'disabled'
+			)));
 			$div->appendChild($label);
 
 			$label = Widget::Label(__('Sort Order'));
@@ -334,7 +350,10 @@
 				array('random', ('random' == $sort_ds->dsParamORDER), __('random')),
 			);
 
-			$label->appendChild(Widget::Select('fields[order]', $options, array('disabled' => 'disabled')));
+			$label->appendChild(Widget::Select('fields[order]', $options, array(
+				'class' => 'sort-order',
+				'disabled' => 'disabled'
+			)));
 			$div->appendChild($label);
 
 			$fieldset->appendChild($div);
