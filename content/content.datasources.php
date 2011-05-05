@@ -415,7 +415,7 @@
 							Symphony::Database()->update($page, 'tbl_pages', "`id` = '".$page['id']."'");
 						}
 					}
-					redirect(SYMPHONY_URL . '/blueprints/components/');
+					redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/');
 				}
 			}
 		}

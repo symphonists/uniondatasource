@@ -17,6 +17,16 @@
 			);
 		}
 
+		public function fetchNavigation(){
+			return array(
+				array(
+					'location' 	=> __('Blueprints'),
+					'name' 		=> __('Union Datasources'),
+					'link' 		=> '/datasources/'
+				)
+			);
+		}
+
 	}
 
 ?>
