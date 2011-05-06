@@ -91,8 +91,6 @@ Class UnionDatasource extends Datasource {
 	 * all filtering, sorting of each of the datasources before the union takes place.
 	 * The majority of this code is sliced from Symphony's `datasource.section.php` file.
 	 *
-	 * @todo Check Grouping
-	 *
 	 * @param Datasource $datasource
 	 * @return array
 	 *  An array of Entry objects for the given `$datasource`
@@ -169,14 +167,20 @@ Class UnionDatasource extends Datasource {
 		);
 
 		// SORTING
-		// @todo support RAND()
 		$sort_field = null;
-		if($datasource->dsParamSORT == 'system:id') {
+
+		// Handle random
+		if($datasource->dsParamORDER == 'RAND') {
+			$data['sort'] = 'ORDER BY RAND()';
+		}
+		// Handle 'system:id' or 'system:date' psuedo fields
+		else if($datasource->dsParamSORT == 'system:id') {
 			$data['sort'] = 'ORDER BY id ' . $datasource->dsParamORDER;
 		}
 		else if($datasource->dsParamSORT == 'system:date') {
 			$data['sort'] = 'ORDER BY creation_date ' . $datasource->dsParamORDER;
 		}
+		// Handle real field instances
 		else {
 			$field = self::$entryManager->fieldManager->fetch(
 				 self::$entryManager->fieldManager->fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource())
@@ -204,7 +208,11 @@ Class UnionDatasource extends Datasource {
 				%s
 				WHERE `e`.`section_id` = %d
 				%s
-			", (is_array($sort_field) ? ', ' . $sort_field[1] : ''), $joins, $datasource->getSource(), $where
+			",
+			(is_array($sort_field) ? ', ' . $sort_field[1] : ''),
+			$joins,
+			$datasource->getSource(),
+			$where
 		);
 
 		return $data;
@@ -219,6 +227,16 @@ Class UnionDatasource extends Datasource {
 	 *
 	 * @param array $entries
 	 * @param array $param_pool
+	 * @todo Grouping
+	 *  Grouping will be very difficult with UnionDS. The current Grouping works on an
+	 *  array level, rather then the springs to mind SQL GROUP BY. Grouping calls the
+	 *  grouped field's `groupRecords` function, which loops over the `$entries` array
+	 *  getting the data for the grouped field. The problem is that this uses the field_id,
+	 *  so it cannot apply to other entries who are in different sections. This code untouchable
+	 *  inside the Field class, so it would require something fairly crude I'd imagine to
+	 *  replicate. Perhaps the `$entries` would have to be dissolved into same section groups and
+	 *  run a group on each section before merging the array together... which has it's own set
+	 *  of problems, not happening anytime soon unfortunately.
 	 */
 	public function output($entries, &$param_pool) {
 		$result = new XMLElement($this->dsParamROOTELEMENT);
