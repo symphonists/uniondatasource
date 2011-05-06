@@ -64,13 +64,13 @@
 			else{
 				foreach($union_datasources as $datasource) {
 					$about = $datasource->about();
+					$handle = str_replace('-','_',$datasource->dsParamROOTELEMENT);
 
 					// Setup each cell
 					$td1 = Widget::TableData(Widget::Anchor(
-						$about['name'], Administration::instance()->getCurrentPageURL().'edit/' . str_replace('-','_',$datasource->dsParamROOTELEMENT) . '/', null, 'content'
+						$about['name'], Administration::instance()->getCurrentPageURL().'edit/' . $handle . '/', null, 'content'
 					));
-
-					$td1->appendChild(Widget::Input("items[{$about['handle']}]", null, 'checkbox'));
+					$td1->appendChild(Widget::Input("items[$handle]", null, 'checkbox'));
 
 					// Show Datasources
 					$union = array();
@@ -108,6 +108,19 @@
 			);
 
 			$this->Form->appendChild($table);
+
+			$tableActions = new XMLElement('div');
+			$tableActions->setAttribute('class', 'actions');
+
+			$options = array(
+				array(null, false, __('With Selected...')),
+				array('delete', false, __('Delete'), 'confirm')
+			);
+
+			$tableActions->appendChild(Widget::Select('with-selected', $options));
+			$tableActions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
+
+			$this->Form->appendChild($tableActions);
 		}
 
 		public function __viewNew() {
@@ -120,7 +133,7 @@
 			if($this->_context[0] == 'edit') {
 				$isNew = false;
 
-				if(!$datasource = $this->_context[1]) redirect(SYMPHONY_URL . 'extensions/uniondatasource/datasources/');
+				if(!$datasource = $this->_context[1]) redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/');
 
 				if(!$existing = self::$dsm->create($datasource, array(), false)) {
 					throw new SymphonyErrorPage(__('The datasource you requested to edit does not exist.'), __('Datasource not found'), 'error');
@@ -143,8 +156,8 @@
 								'Union Datasource updated at %1$s. <a href="%2$s" accesskey="c">Create another?</a> <a href="%3$s" accesskey="a">View all Union Datasources</a>',
 								array(
 									DateTimeObj::getTimeAgo(__SYM_TIME_FORMAT__),
-									SYMPHONY_URL . 'extensions/uniondatasource/datasources/new/',
-									SYMPHONY_URL . 'extensions/uniondatasource/datasources/',
+									SYMPHONY_URL . '/extension/uniondatasource/datasources/new/',
+									SYMPHONY_URL . '/extension/uniondatasource/datasources/',
 								)
 							),
 							Alert::SUCCESS);
@@ -156,8 +169,8 @@
 								'Union Datasource created at %1$s. <a href="%2$s" accesskey="c">Create another?</a> <a href="%3$s" accesskey="a">View all Union Datasources</a>',
 								array(
 									DateTimeObj::getTimeAgo(__SYM_TIME_FORMAT__),
-									SYMPHONY_URL . 'extensions/uniondatasource/datasources/new/',
-									SYMPHONY_URL . 'extensions/uniondatasource/datasources/',
+									SYMPHONY_URL . '/extension/uniondatasource/datasources/new/',
+									SYMPHONY_URL . '/extension/uniondatasource/datasources/',
 								)
 							),
 							Alert::SUCCESS);
@@ -389,37 +402,61 @@
 
 		}
 
+		public function __actionIndex() {
+			$checked = (is_array($_POST['items'])) ? array_keys($_POST['items']) : null;
+
+			if(is_array($checked) && !empty($checked)) {
+				if($_POST['with-selected'] == 'delete') {
+					$canProceed = true;
+
+					foreach($checked as $handle) {
+						if(!$this->__actionDelete($handle)) {
+							$canProceed = false;
+						}
+					}
+
+					if($canProceed) redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/');
+				}
+			}
+		}
+
 		public function __actionNew() {
 			return $this->__actionEdit();
 		}
 
 		public function __actionEdit(){
 			if(array_key_exists('save', $_POST['action'])) return $this->__formAction();
-			elseif(array_key_exists('delete', $_POST['action'])){
-				if(!General::deleteFile(DATASOURCES . '/data.' . $this->_context[1] . '.php')){
-					$this->pageAlert(__('Failed to delete <code>%s</code>. Please check permissions.', array($this->_context[1])), Alert::ERROR);
-				}
-				else{
-
-					$pages = Symphony::Database()->fetch("SELECT * FROM `tbl_pages` WHERE `data_sources` REGEXP '[[:<:]]".$this->_context[1]."[[:>:]]' ");
-
-					if(is_array($pages) && !empty($pages)){
-						foreach($pages as $page){
-
-							$data_sources = preg_split('/\s*,\s*/', $page['data_sources'], -1, PREG_SPLIT_NO_EMPTY);
-							$data_sources = array_flip($data_sources);
-							unset($data_sources[$this->_context[1]]);
-
-							$page['data_sources'] = implode(',', array_flip($data_sources));
-
-							Symphony::Database()->update($page, 'tbl_pages', "`id` = '".$page['id']."'");
-						}
-					}
+			else if(array_key_exists('delete', $_POST['action'])) {
+				if($this->__actionDelete($this->_context[1])) {
 					redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/');
 				}
 			}
 		}
 
+		public function __actionDelete($handle) {
+			if(!General::deleteFile(DATASOURCES . '/data.' . $handle . '.php')){
+				$this->pageAlert(__('Failed to delete <code>%s</code>. Please check permissions.', array($handle)), Alert::ERROR);
+				return false;
+			}
+			else {
+				$pages = Symphony::Database()->fetch("SELECT * FROM `tbl_pages` WHERE `data_sources` REGEXP '[[:<:]]".$handle."[[:>:]]' ");
+
+				if(is_array($pages) && !empty($pages)){
+					foreach($pages as $page){
+
+						$data_sources = preg_split('/\s*,\s*/', $page['data_sources'], -1, PREG_SPLIT_NO_EMPTY);
+						$data_sources = array_flip($data_sources);
+						unset($data_sources[$this->_context[1]]);
+
+						$page['data_sources'] = implode(',', array_flip($data_sources));
+
+						Symphony::Database()->update($page, 'tbl_pages', "`id` = '".$page['id']."'");
+					}
+				}
+
+				return true;
+			}
+		}
 
 		public function __formAction(){
 			$fields = $_POST['fields'];
@@ -516,7 +553,6 @@
 					}
 
 					redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/edit/'.$classname.'/'.($this->_context[0] == 'new' ? 'created' : 'saved') . '/');
-
 				}
 			}
 		}
