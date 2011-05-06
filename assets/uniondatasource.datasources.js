@@ -36,8 +36,20 @@ jQuery(document).ready(function() {
 		update();
 
 		// Listen for when the duplicator changes
-		$duplicator.bind('destruct.duplicator orderstop.duplicator', function() {
+		// Update the sort options
+		$duplicator.bind('orderstop.duplicator click.duplicator', function() {
 			update();
+		});
+
+		// When removing a duplicator item
+		$duplicator.bind('destruct.duplicator', function() {
+			if($duplicator.find('li').length) {
+				update();
+			}
+			else {
+				$sort.find('option').remove();
+				$order.find('option').remove();
+			}
 		});
 
 	})(jQuery.noConflict());
