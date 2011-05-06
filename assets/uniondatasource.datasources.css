@@ -5,3 +5,11 @@ ol.union-duplicator > .instance {
 ol.union-duplicator > .instance > .content {
 	padding: 0;
 }
+
+#error ol.union-duplicator {
+	margin-bottom: 0;
+}
+
+#error p {
+	padding-top: .75em;
+}

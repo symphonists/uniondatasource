@@ -129,7 +129,7 @@
 
 		public function __viewEdit() {
 			$isNew = true;
-			// Verify role exists
+			// Verify datasource exists
 			if($this->_context[0] == 'edit') {
 				$isNew = false;
 
@@ -300,7 +300,15 @@
 				$ol->appendChild($wrapper);
 			}
 
-			$div->appendChild($ol);
+			if(isset($this->_errors['union'])) {
+				$div->appendChild(
+					Widget::wrapFormElementWithError($ol, $this->_errors['union'])
+				);
+			}
+			else {
+				$div->appendChild($ol);
+			}
+
 			$fieldset->appendChild($div);
 
 			$this->Form->appendChild($fieldset);
@@ -477,6 +485,10 @@
 			}
 			else if(!self::__isValidPageString($fields['page_number'])){
 				$this->_errors['page_number'] = __('Must be a valid number or parameter');
+			}
+
+			if(!is_array($fields['union']) || empty($fields['union'])) {
+				$this->_errors['union'] = __('At least one datasource is required to build a Union Datasource');
 			}
 
 			$classname = Lang::createHandle($fields['name'], NULL, '_', false, true, array('@^[^a-z]+@i' => '', '/[^\w-\.]/i' => ''));
