@@ -189,10 +189,16 @@
 
 			if($isNew) {
 				$this->setTitle(__('Symphony &ndash; Union Datasources'));
-
-				$fields['paginate_results'] = 'yes';
-				$fields['max_records'] = '20';
-				$fields['page_number'] = '1';
+				
+				if(isset($_POST['fields'])){
+					$fields = $_POST['fields'];
+					$fields['paginate_results'] = ($fields['paginate_results'] == 'on') ? 'yes' : 'no';
+				}
+				else {
+					$fields['paginate_results'] = 'yes';
+					$fields['max_records'] = '20';
+					$fields['page_number'] = '1';
+				}
 			}
 			else {
 				$about = $existing->about();
@@ -516,9 +522,15 @@
 					'rootelement' => $rootelement,
 				);
 
+				// Get the current UnionDatasource extension so we can use it's
+				// version to pass onto the datasource. May be helpful later on
+				// for debugging/updating.
+				$ud = Symphony::ExtensionManager()->getInstance('UnionDatasource');
+				$ud = $ud->about();
+
 				$about = array(
 					'name' => $fields['name'],
-					'version' => '1.0',
+					'version' => $ud['version'],
 					'release date' => DateTimeObj::getGMT('c'),
 					'author name' => Administration::instance()->Author->getFullName(),
 					'author website' => URL,
