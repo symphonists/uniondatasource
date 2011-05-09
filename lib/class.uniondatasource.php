@@ -239,12 +239,17 @@ Class UnionDatasource extends Datasource {
 	 *  of problems, not happening anytime soon unfortunately.
 	 */
 	public function output($entries, &$param_pool) {
-		$result = new XMLElement($this->dsParamROOTELEMENT);
+		if(!isset($entries['records'])) {
+			$result = $this->emptyXMLSet();
+		}
+		else {
+			$result = new XMLElement($this->dsParamROOTELEMENT);
+		}
 
 		// Add Pagination
 		if(is_array($this->dsParamINCLUDEDELEMENTS) && in_array('system:pagination', $this->dsParamINCLUDEDELEMENTS)) {
 			$pagination_element = General::buildPaginationElement(
-				$entries['total-entries'],
+				isset($entries['total-entries']) ? $entries['total-entries'] : 0,
 				max(1, ceil($entries['total-entries'] * (1 / $this->dsParamLIMIT))),
 				$this->dsParamLIMIT,
 				$this->dsParamSTARTPAGE
@@ -262,6 +267,11 @@ Class UnionDatasource extends Datasource {
 					'handle' => $datasource['section']->get('handle')
 				))
 			);
+		}
+
+		// If there is no records, return early
+		if(!isset($entries['records'])) {
+			return $result;
 		}
 
 		foreach($entries['records'] as $entry) {
