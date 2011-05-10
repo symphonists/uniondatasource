@@ -2,6 +2,8 @@
 
 	require_once(TOOLKIT . '/class.administrationpage.php');
 	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	require_once(TOOLKIT . '/class.sectionmanager.php');
+	require_once(TOOLKIT . '/class.fieldmanager.php');
 
 	Class contentExtensionUnionDatasourceDatasources extends AdministrationPage {
 
@@ -42,7 +44,7 @@
 
 			$union_datasources = array();
 			foreach($datasources as $key => $datasource) {
-				$ds = self::$dsm->create($datasource['handle'], array());
+				$ds = self::$dsm->create($datasource['handle'], array(), false);
 
 				if($ds instanceof UnionDatasource) {
 					$union_datasources[] = $ds;
@@ -189,7 +191,7 @@
 
 			if($isNew) {
 				$this->setTitle(__('Symphony &ndash; Union Datasources'));
-				
+
 				if(isset($_POST['fields'])){
 					$fields = $_POST['fields'];
 					$fields['paginate_results'] = ($fields['paginate_results'] == 'on') ? 'yes' : 'no';
