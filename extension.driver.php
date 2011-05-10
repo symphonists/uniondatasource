@@ -5,8 +5,8 @@
 		public function about(){
 			return array(
 				'name' => 'Union Datasource',
-				'version' => '0.3',
-				'release-date' => '2011-04-12',
+				'version' => '0.4.1',
+				'release-date' => '2011-05-10',
 				'author' => array(
 					'name' => 'Brendan Abbott',
 					'website' => 'http://bloodbone.ws',
