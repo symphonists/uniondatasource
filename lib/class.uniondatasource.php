@@ -170,7 +170,7 @@ Class UnionDatasource extends Datasource {
 		$sort_field = null;
 
 		// Handle random
-		if($datasource->dsParamORDER == 'RAND') {
+		if($datasource->dsParamORDER == 'random') {
 			$data['sort'] = 'ORDER BY RAND()';
 		}
 		// Handle 'system:id' or 'system:date' psuedo fields
@@ -347,7 +347,7 @@ Class UnionDatasource extends Datasource {
 			$result->appendChild($xEntry);
 
 			// Add in the system:date to the output
-			if(in_array('system:date', $datasource->dsParamINCLUDEDELEMENTS)){
+			if(is_array($datasource->dsParamINCLUDEDELEMENTS) && in_array('system:date', $datasource->dsParamINCLUDEDELEMENTS)){
 				$xEntry->appendChild(
 					General::createXMLDateObject(
 						DateTimeObj::get('U', $entry->creationDate),

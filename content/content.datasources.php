@@ -51,6 +51,9 @@
 				}
 
 				unset($datasources[$key]);
+
+				if(!$this->isValidDatasource($ds)) continue;
+
 				$datasources[$datasource['handle']] = array(
 					'about' => $ds->about(),
 					'ds' => $ds
@@ -230,10 +233,11 @@
 
 				unset($datasources[$handle]);
 
-				if(!$datasource instanceof UnionDatasource) {
-					$datasources[str_replace('_','-',$handle)] = $datasource;
-				}
+				if(!$this->isValidDatasource($datasource)) continue;
+
+				$datasources[str_replace('_','-',$handle)] = $datasource;
 			}
+
 		// Name
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
@@ -618,5 +622,27 @@
 
 		private static function __isValidPageString($string){
 			return (bool)preg_match('/^(?:\{\$[\w-]+(?::\$[\w-]+)*(?::\d+)?}|\d+)$/', $string);
+		}
+
+		/**
+		 * Returns boolean if the Datasource is available for UNION.
+		 * This means that they extend `DataSource` class, have a `getSource`
+		 * function and the return of that function is an integer
+		 *
+		 * @param Datasource $datasource
+		 * @return boolean
+		 */
+		protected function isValidDatasource($datasource) {
+			// Rules out CacheableDatasource/UnionDatasource etc.
+			$valid_class = (get_parent_class($datasource) == "DataSource");
+
+			// Rules out custom Datasources
+			// Rules out DynamicXML, Static, Navigation and Author datasources
+			if(method_exists($datasource, 'getSource')) {
+				$source = $datasource->getSource();
+				$source = is_numeric($source);
+			}
+
+			return $valid_class && $source;
 		}
 	}
