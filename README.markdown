@@ -1,8 +1,8 @@
 # Union Datasource
 
-* Version: 0.4.2
+* Version: 0.5
 * Author: Brendan Abbott
-* Build Date: 2011-05-11
+* Build Date: 2011-06-15
 * Requirements: Symphony 2.2
 
 A union datasource allows you to combine multiple datasources to output as a single datasource for the
@@ -29,6 +29,10 @@ and `read-twitter-*`
 results if you are trying to union chained datasources
 
 ## Changelog
+
+* 0.5, 15 June 2011
+	* Support Required URL Parameter
+	* Support Redirect to 404 page when no results are found
 
 * 0.4.2, 11 May 2011
 	* Fix RAND() sorting bug

@@ -198,6 +198,7 @@
 				if(isset($_POST['fields'])){
 					$fields = $_POST['fields'];
 					$fields['paginate_results'] = ($fields['paginate_results'] == 'on') ? 'yes' : 'no';
+					$fields['redirect_on_empty'] = ($fields['redirect_on_empty'] == 'on') ? 'yes' : 'no';
 				}
 				else {
 					$fields['paginate_results'] = 'yes';
@@ -213,6 +214,7 @@
 				if(isset($_POST['fields'])){
 					$fields = $_POST['fields'];
 					$fields['paginate_results'] = ($fields['paginate_results'] == 'on') ? 'yes' : 'no';
+					$fields['redirect_on_empty'] = ($fields['redirect_on_empty'] == 'on') ? 'yes' : 'no';
 				}
 				else {
 					$fields['name'] = $about['name'];
@@ -220,6 +222,8 @@
 					$fields['paginate_results'] = (isset($existing->dsParamPAGINATERESULTS) ? $existing->dsParamPAGINATERESULTS : 'yes');
 					$fields['page_number'] = $existing->dsParamSTARTPAGE;
 					$fields['max_records'] = $existing->dsParamLIMIT;
+					$fields['redirect_on_empty'] = isset($existing->dsParamREDIRECTONEMPTY) ? $existing->dsParamREDIRECTONEMPTY : 'no';
+					$fields['required_url_param'] = $existing->dsParamREQUIREDPARAM;
 				}
 			}
 
@@ -408,6 +412,26 @@
 
 			$this->Form->appendChild($fieldset);
 
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->setAttribute('class', 'settings contextual inverse navigation static_xml dynamic_xml');
+			$fieldset->appendChild(new XMLElement('legend', __('Output Options')));
+
+			$label = Widget::Label(__('Required URL Parameter'));
+			$label->appendChild(new XMLElement('i', __('Optional')));
+			$label->appendChild(Widget::Input('fields[required_url_param]', trim($fields['required_url_param'])));
+			$fieldset->appendChild($label);
+
+			$p = new XMLElement('p', __('An empty result will be returned when this parameter does not have a value. Do not wrap the parameter with curly-braces.'));
+			$p->setAttribute('class', 'help');
+			$fieldset->appendChild($p);
+
+			$label = Widget::Label();
+			$input = Widget::Input('fields[redirect_on_empty]', 'yes', 'checkbox', (isset($fields['redirect_on_empty']) && $fields['redirect_on_empty'] == 'yes') ? array('checked' => 'checked') : NULL);
+			$label->setValue(__('%s Redirect to 404 page when no results are found', array($input->generate(false))));
+			$fieldset->appendChild($label);
+
+			$this->Form->appendChild($fieldset);
+
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'actions');
 			$div->appendChild(Widget::Input('action[save]', __('Save Changes'), 'submit', array('accesskey' => 's')));
@@ -526,6 +550,8 @@
 
 				$params = array(
 					'rootelement' => $rootelement,
+					'redirectonempty' => (isset($fields['redirect_on_empty']) ? 'yes' : 'no'),
+					'requiredparam' => trim($fields['required_url_param'])
 				);
 
 				// Get the current UnionDatasource extension so we can use it's

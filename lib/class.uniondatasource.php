@@ -240,6 +240,9 @@ Class UnionDatasource extends Datasource {
 	 */
 	public function output($entries, &$param_pool) {
 		if(!isset($entries['records'])) {
+			if($this->dsParamREDIRECTONEMPTY == 'yes'){
+				throw new FrontendPageNotFoundException;
+			}
 			$result = $this->emptyXMLSet();
 		}
 		else {
