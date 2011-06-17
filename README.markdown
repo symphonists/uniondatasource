@@ -1,12 +1,11 @@
 # Union Datasource
 
-* Version: 0.5
+* Version: 0.5.1
 * Author: Brendan Abbott
 * Build Date: 2011-06-15
 * Requirements: Symphony 2.2
 
-A union datasource allows you to combine multiple datasources to output as a single datasource for the
-primary purpose of a unified pagination.
+A union datasource allows you to combine multiple datasources to output as a single datasource for the primary purpose of a unified pagination.
 
 ## How do I use it?
 
@@ -29,6 +28,10 @@ and `read-twitter-*`
 results if you are trying to union chained datasources
 
 ## Changelog
+
+* 0.5.1, 18 June 2011
+	* Preemptive support for Symphony 2.2.2's new ordering syntax
+	* Store Union Datasource alongside the version number
 
 * 0.5, 15 June 2011
 	* Support Required URL Parameter
