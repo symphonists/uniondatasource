@@ -24,7 +24,7 @@
 					'name' => '<!-- AUTHOR NAME -->',
 					'website' => '<!-- AUTHOR WEBSITE -->',
 					'email' => '<!-- AUTHOR EMAIL -->'),
-				'version' => '<!-- VERSION -->',
+				'version' => 'Union Datasource <!-- VERSION -->',
 				'release-date' => '<!-- RELEASE DATE -->'
 			);
 		}

@@ -190,9 +190,23 @@ Class UnionDatasource extends Datasource {
 
 			// We just want the column that the field uses internally to sort by with MySQL
 			// We'll use this field and sort in PHP instead
-			preg_match('/ORDER BY (`ed`\..*) (ASC|DESC)$/i', $data['sort'], $sort_field);
+			preg_match('/ORDER BY[\s\S]*(`ed`\..*)[\s\S]*(ASC|DESC)$/i', $data['sort'], $sort_field);
+
+			// The new ORDER BY syntax in Symphony 2.2.2 isn't compatible with what
+			// we want for the purposes of UNION, so lets rewrite the ORDER BY to
+			// what we do want (that is, if we have to)
+			if(preg_match('/\(+/i', $data['sort'])) {
+				$data['sort'] = 'ORDER BY ' . $sort_field[1] . ' ' . $sort_field[2];
+			}
 
 			$data['sort'] = preg_replace('/`ed`\./', '', $data['sort']);
+
+			// New changes to sorting mean that there possibly wont't be a join
+			// on the `ed` table. `ed` is commonly used to entries_data_. If the
+			// join is omitted from `$joins`, we'll add the default join ourselves
+			if(!preg_match('/`ed`/', $joins)) {
+				$joins .= "LEFT OUTER JOIN `tbl_entries_data_" . $field->get('id') . "` AS `ed` ON (`e`.`id` = `ed`.`entry_id`)";
+			}
 		}
 
 		// combine INCLUDEDELEMENTS and PARAMOUTPUT into an array of field names
