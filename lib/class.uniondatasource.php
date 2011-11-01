@@ -60,6 +60,8 @@ Class UnionDatasource extends Datasource {
 		foreach($this->datasources as $handle => $datasource) {
 			$data = $this->grab_sql($datasource['datasource']);
 
+			if(!isset($data['section'])) continue;
+
 			$this->data['section'][key($data['section'])] = current($data['section']);
 			$this->data['sort'][] = $data['sort'];
 			$this->data['sql'][] = $data['sql'];
@@ -114,7 +116,6 @@ Class UnionDatasource extends Datasource {
 
 					$value = preg_split('/'.($filter_type == DS_FILTER_AND ? '\+' : '(?<!\\\\),').'\s*/', $filter, -1, PREG_SPLIT_NO_EMPTY);
 					$value = array_map('trim', $value);
-
 					$value = array_map(array('Datasource', 'removeEscapedCommas'), $value);
 				}
 
@@ -188,24 +189,26 @@ Class UnionDatasource extends Datasource {
 
 			$field->buildSortingSQL($joins, $where, $data['sort'], $datasource->dsParamORDER);
 
-			// We just want the column that the field uses internally to sort by with MySQL
-			// We'll use this field and sort in PHP instead
-			preg_match('/ORDER BY[\s\S]*(`ed`\..*)[\s\S]*(ASC|DESC)$/i', $data['sort'], $sort_field);
+			if(!empty($data['sort'])) {
+				// We just want the column that the field uses internally to sort by with MySQL
+				// We'll use this field and sort in PHP instead
+				preg_match('/ORDER BY[\s\S]*(`ed`\..*)[\s\S]*(ASC|DESC)$/i', $data['sort'], $sort_field);
 
-			// The new ORDER BY syntax in Symphony 2.2.2 isn't compatible with what
-			// we want for the purposes of UNION, so lets rewrite the ORDER BY to
-			// what we do want (that is, if we have to)
-			if(preg_match('/\(+/i', $data['sort'])) {
-				$data['sort'] = 'ORDER BY ' . $sort_field[1] . ' ' . $sort_field[2];
-			}
+				// The new ORDER BY syntax in Symphony 2.2.2 isn't compatible with what
+				// we want for the purposes of UNION, so lets rewrite the ORDER BY to
+				// what we do want (that is, if we have to)
+				if(preg_match('/\(+/i', $data['sort'])) {
+					$data['sort'] = 'ORDER BY ' . $sort_field[1] . ' ' . $sort_field[2];
+				}
 
-			$data['sort'] = preg_replace('/`ed`\./', '', $data['sort']);
+				$data['sort'] = preg_replace('/`ed`\./', '', $data['sort']);
 
-			// New changes to sorting mean that there possibly wont't be a join
-			// on the `ed` table. `ed` is commonly used to entries_data_. If the
-			// join is omitted from `$joins`, we'll add the default join ourselves
-			if(!preg_match('/`ed`/', $joins)) {
-				$joins .= "LEFT OUTER JOIN `tbl_entries_data_" . $field->get('id') . "` AS `ed` ON (`e`.`id` = `ed`.`entry_id`)";
+				// New changes to sorting mean that there possibly wont't be a join
+				// on the `ed` table. `ed` is commonly used to entries_data_. If the
+				// join is omitted from `$joins`, we'll add the default join ourselves
+				if(!preg_match('/`ed`/', $joins)) {
+					$joins .= "LEFT OUTER JOIN `tbl_entries_data_" . $field->get('id') . "` AS `ed` ON (`e`.`id` = `ed`.`entry_id`)";
+				}
 			}
 		}
 
@@ -446,8 +449,9 @@ Class UnionDatasource extends Datasource {
 	 *  from all fields in a section.
 	 * @return array
 	 */
-	public function buildEntries(Array $id_list, $total_rows, $element_names = null){
+	public function buildEntries(array $id_list, $total_rows, $element_names = null){
 		$entries = array();
+		$schema_sql = array();
 
 		if (empty($id_list)) return $entries;
 
@@ -469,11 +473,13 @@ Class UnionDatasource extends Datasource {
 					$element_names[$section_id][$index] = trim($parts[0]);
 				}
 
-				$schema_sql[] = sprintf(
-					"SELECT `id` FROM `tbl_fields` WHERE `parent_section` = %d AND `element_name` IN ('%s')",
-					$section_id,
-					implode("', '", array_unique($element_names[$section_id]))
-				);
+				if(!empty($element_names[$section_id])) {
+					$schema_sql[] = sprintf(
+						"SELECT `id` FROM `tbl_fields` WHERE `parent_section` = %d AND `element_name` IN ('%s')",
+						$section_id,
+						implode("', '", array_unique($element_names[$section_id]))
+					);
+				}
 			}
 		}
 		else {
