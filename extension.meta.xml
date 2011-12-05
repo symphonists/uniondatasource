@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension id="uniondatasource">
+	<name>Union Datasource</name>
+	<description>Unify your datasources into a single stream</description>
+	<repo type="github">https://github.com/brendo/uniondatasource</repo>
+	<url type="discuss">http://symphony-cms.com/discuss/thread/66151/</url>
+	<types>
+		<type>Other</type>
+	</types>
+	<authors>
+		<author>
+			<name github="brendo" symphony="brendo">Brendan Abbott</name>
+			<website>http://www.bloodbone.ws</website>
+		</author>
+	</authors>
+	<releases>
+		<release version="0.5.2" date="2011-12-05" min="2.2" />
+		<release version="0.5.1" date="2011-06-18" min="2.2" />
+	</releases>
+</extension>

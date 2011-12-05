@@ -1,8 +1,8 @@
 # Union Datasource
 
-* Version: 0.5.1
+* Version: 0.5.2
 * Author: Brendan Abbott
-* Build Date: 2011-06-15
+* Build Date: 2011-12-05
 * Requirements: Symphony 2.2
 
 A union datasource allows you to combine multiple datasources to output as a single datasource for the primary purpose of a unified pagination.
@@ -29,6 +29,10 @@ results if you are trying to union chained datasources
 
 ## Changelog
 
+* 0.5.2, 5 December 2011
+	* Add `extension.meta.xml` file
+	* Prevent some warnings from occurring
+
 * 0.5.1, 18 June 2011
 	* Preemptive support for Symphony 2.2.2's new ordering syntax
 	* Store Union Datasource alongside the version number
@@ -38,7 +42,7 @@ results if you are trying to union chained datasources
 	* Support Redirect to 404 page when no results are found
 
 * 0.4.2, 11 May 2011
-	* Fix RAND() sorting bug
+	* Fix `RAND()` sorting bug
 	* Ensure only valid Datasources are includable
 
 * 0.4.1, 10 May 2011
@@ -54,7 +58,7 @@ results if you are trying to union chained datasources
 	* Sorting by `system:id` and `system:date` should work correctly
 
 * 0.3, 12 April 2011
-	* Fixed a critical bug that rendered the extension near useless. Thanks tonyarnold for discovering and help debug.
+	* Fixed a critical bug that rendered the extension near useless. Thanks **@tonyarnold** for discovering and help debug.
 
 * 0.2, 04 April 2011
 	* Near complete rewrite to move all pagination and sorting into the SQL instead of using PHP.
