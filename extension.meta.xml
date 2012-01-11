@@ -14,7 +14,46 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="0.5.2" date="2011-12-05" min="2.2" />
-		<release version="0.5.1" date="2011-06-18" min="2.2" />
+		<release version="0.6" date="2012-01-11" min="2.2" max='2.2.x'>
+			* Add support for dependencies. Datasources included in a Union Datasource will now resolve dependencies. Resave your existing Union Datasources to unlock this achievement. Fixes [#7](https://github.com/brendo/uniondatasource/issues/7)
+			* Fixed an issue where the sort order of Datasources would show incorrectly in the backend. Fixes [#5](https://github.com/brendo/uniondatasource/issues/5)
+		</release>
+		<release version="0.5.2" date="2011-12-05" min="2.2" max='2.2.x'>
+			* Add `extension.meta.xml` file
+			* Prevent some warnings from occurring
+		</release>
+		<release version="0.5.1" date="2011-06-18" min="2.2" max='2.2.x'>
+			* Preemptive support for Symphony 2.2.2's new ordering syntax
+			* Store Union Datasource alongside the version number
+		</release>
+		<release version="0.5" date="2011-06-15" min="2.2" max='2.2.x'>
+			* Support Required URL Parameter
+			* Support Redirect to 404 page when no results are found
+		</release>
+		<release version="0.4.2" date="2011-05-11" min="2.2" max='2.2.x'>
+			* Fix `RAND()` sorting bug
+			* Ensure only valid Datasources are includable
+		</release>
+		<release version="0.4.1" date="2011-05-10" min="2.2" max='2.2.x'>
+			* Don't `$process_param` in the backend context, fixes issue with required parameters
+			* Ensure SectionManager and FieldManager classes are included
+		</release>
+		<release version="0.4" date="2011-05-11" min="2.2" max='2.2.x'>
+			* Implemented an interface to build Union Datasources without having to hack modify any PHP
+			* Implement `DatasourceEntriesBuilt` delegate
+			* Support RAND() ordering
+			* Add support for Associated Entry Counts
+			* Display correct XML result when there are no entries found
+			* Sorting by `system:id` and `system:date` should work correctly
+		</release>
+		<release version="0.3" date="2011-04-12" min="2.2" max='2.2.x'>
+			* Fixed a critical bug that rendered the extension near useless. Thanks **@tonyarnold** for discovering and help debug.
+		</release>
+		<release version="0.2" date="2011-04-04" min="2.2" max='2.2.x'>
+			* Near complete rewrite to move all pagination and sorting into the SQL instead of using PHP.
+		</release>
+		<release version="0.1" date="2011-03-23" min="2.2" max='2.2.x'>
+			* Initial release
+		</release>
 	</releases>
 </extension>
