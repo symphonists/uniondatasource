@@ -590,7 +590,11 @@
 				$dsShell = str_replace('<!-- CLASS NAME -->', $classname, $dsShell);
 				$dsShell = str_replace('<!-- SOURCE -->', $source, $dsShell);
 
-				## Remove left over placeholders
+				// This is fun! Given our 'about to be saved' template and an
+				// array of the datasources this contains, we'll parse out any dependencies.
+				$this->parseDependencies($dsShell, $union);
+
+				// Remove left over placeholders
 				$dsShell = preg_replace(array('/<!--[\w ]++-->/', '/(\r\n){2,}/', '/(\t+[\r\n]){2,}/'), '', $dsShell);
 
 				// Write the file
@@ -620,6 +624,20 @@
 					redirect(SYMPHONY_URL . '/extension/uniondatasource/datasources/edit/'.$classname.'/'.($this->_context[0] == 'new' ? 'created' : 'saved') . '/');
 				}
 			}
+		}
+
+		// Parse any dependencies from the Union Datasources and adds them in `$shell`.
+		public function parseDependencies(&$shell, array $union) {
+			$dependencies = array();
+			foreach($union as $ds) {
+				$datasource = self::$dsm->create(str_replace('-','_',$ds), array(), false);
+				$dependencies = array_merge($dependencies, $datasource->getDependencies());
+			}
+
+			if(empty($dependencies)) return;
+
+			$dependencies = General::array_remove_duplicates($dependencies);
+			$shell = str_replace('<!-- DS DEPENDENCY LIST -->', "'" . implode("', '", $dependencies) . "'", $shell);
 		}
 
 		public function __injectAboutInformation(&$shell, $details){
