@@ -281,27 +281,36 @@
 			foreach($datasources as $handle => $datasource) {
 				$about = $datasource->about();
 
-				if(isset($existing->dsParamUNION) && in_array($handle, $existing->dsParamUNION)) {
-					// Instance
-					$wrapper = new XMLElement('li');
-					$wrapper->setAttribute('class', 'unique');
-					$wrapper->setAttribute('data-type', $handle);
-					$wrapper->appendChild(new XMLElement('h4', $about['name']));
-					$wrapper->appendChild(
-						Widget::Input('fields[union][]', $handle, 'hidden')
-					);
-					$wrapper->appendChild(
-						Widget::Input('fields[union-sort][]', $datasource->dsParamSORT, 'hidden')
-					);
-					$wrapper->appendChild(
-						Widget::Input('fields[union-order][]', $datasource->dsParamORDER, 'hidden')
-					);
-					$ol->appendChild($wrapper);
-				}
-
 				// Template
 				$wrapper = new XMLElement('li');
 				$wrapper->setAttribute('class', 'unique template');
+				$wrapper->setAttribute('data-type', $handle);
+				$wrapper->appendChild(new XMLElement('h4', $about['name']));
+				$wrapper->appendChild(
+					Widget::Input('fields[union][]', $handle, 'hidden')
+				);
+				$wrapper->appendChild(
+					Widget::Input('fields[union-sort][]', $datasource->dsParamSORT, 'hidden')
+				);
+				$wrapper->appendChild(
+					Widget::Input('fields[union-order][]', $datasource->dsParamORDER, 'hidden')
+				);
+				$ol->appendChild($wrapper);
+			}
+
+			// We need to loop over the actual union datasources seperately instead of
+			// in the previous loop because we have an order to respect. Although the order
+			// is correct in the saved file, it is not reflected in the UI because the
+			// `$datasources` variable is sorted alphabetically.
+			// Fixes #5 & https://github.com/brendo/uniondatasource/issues/5
+			if(isset($existing->dsParamUNION)) foreach($existing->dsParamUNION as $handle) {
+				if(!isset($datasources[$handle])) continue;
+
+				$about = $datasources[$handle]->about();
+
+				// Instance
+				$wrapper = new XMLElement('li');
+				$wrapper->setAttribute('class', 'unique');
 				$wrapper->setAttribute('data-type', $handle);
 				$wrapper->appendChild(new XMLElement('h4', $about['name']));
 				$wrapper->appendChild(
