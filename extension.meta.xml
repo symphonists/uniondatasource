@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension id="uniondatasource">
+<extension id="uniondatasource" status="experimental" xmlns="http://symphony-cms.com/schemas/extension/1.0">
 	<name>Union Datasource</name>
 	<description>Unify your datasources into a single stream</description>
 	<repo type="github">https://github.com/brendo/uniondatasource</repo>
@@ -14,6 +14,9 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="0.7" min="2.3">
+			* Completely updated to use Providers that are new with Symphony 2.3
+		</release>
 		<release version="0.6" date="2012-01-11" min="2.2" max='2.2.x'>
 			* Add support for dependencies. Datasources included in a Union Datasource will now resolve dependencies. Resave your existing Union Datasources to unlock this achievement. Fixes [#7](https://github.com/brendo/uniondatasource/issues/7)
 			* Fixed an issue where the sort order of Datasources would show incorrectly in the backend. Fixes [#5](https://github.com/brendo/uniondatasource/issues/5)

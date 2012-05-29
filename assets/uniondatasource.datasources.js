@@ -1,8 +1,9 @@
 jQuery(document).ready(function() {
 	(function($) {
-		var $duplicator = $('ol.union-duplicator'),
-			$sort = $('select.sort-by'),
-			$order = $('select.sort-order');
+		var $union_container = $('.UnionDatasource'),
+			$duplicator = $union_container.find('ol.union-duplicator'),
+			$sort = $union_container.find('select.sort-by'),
+			$order = $union_container.find('select.sort-order');
 
 		// Create our duplicator with ordering
 		$duplicator.symphonyDuplicator({
@@ -14,8 +15,8 @@ jQuery(document).ready(function() {
 			$duplicator.find('li:first').each(function() {
 				var $self = $(this),
 					sort = $self.find('input[name*=union-sort]').val(),
+					order = $self.find('input[name*=union-order]').val(),
 					$existing_sort = $sort.find('option[value=' + sort + ']'),
-					order = $self.find('input[name*=union-order]').val()
 					$existing_order = $order.find('option[value=' + order + ']');
 
 				// If this sort field already exists, select it
@@ -45,7 +46,7 @@ jQuery(document).ready(function() {
 		// Trigger inital Sort By/Order population
 		update();
 
-		$duplicator
+		$duplicator.closest('.frame')
 			// Listen for when the duplicator changes
 			// Update the sort options
 			.bind('orderstop.duplicator click.duplicator', update)

@@ -1,30 +1,29 @@
 <?php
 
+	require_once EXTENSIONS . '/uniondatasource/data-sources/datasource.union.php';
+
 	Class Extension_UnionDatasource extends Extension {
 
-		public function about(){
-			return array(
-				'name' => 'Union Datasource',
-				'version' => '0.6',
-				'release-date' => '2012-01-11',
-				'author' => array(
-					'name' => 'Brendan Abbott',
-					'website' => 'http://bloodbone.ws',
-					'email' => 'brendan@bloodbone.ws'
-				),
-				'description' => 'A union datasource allows you to combine multiple datasources to output as a single datasource for the
-				primary purpose of a unified pagination.'
-			);
-		}
+		private static $provides = array();
 
-		public function fetchNavigation(){
-			return array(
-				array(
-					'location' 	=> __('Blueprints'),
-					'name' 		=> __('Union Datasources'),
-					'link' 		=> '/datasources/'
+		public static function registerProviders() {
+			self::$provides = array(
+				'data-sources' => array(
+					'UnionDatasource' => UnionDatasource::getName()
 				)
 			);
+
+			return true;
+		}
+
+		public static function providerOf($type = null) {
+			self::registerProviders();
+
+			if(is_null($type)) return self::$provides;
+
+			if(!isset(self::$provides[$type])) return array();
+
+			return self::$provides[$type];
 		}
 
 	}
