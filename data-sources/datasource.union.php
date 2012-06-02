@@ -193,8 +193,8 @@
 			$settings = $settings[$class];
 			$settings['paginate_results'] = ($settings['paginate_results'] == 'on') ? 'yes' : 'no';
 
-			if(!is_null($handle)) {
-				$sort_ds = DatasourceManager::create(str_replace('-','_',$settings['union'][0]), array(), false);
+			if(!is_null($handle) and isset($settings['union'])) {
+				$sort_ds = DatasourceManager::create(str_replace('-','_', $settings['union'][0]), array(), false);
 				$sort_about = $sort_ds->about();
 			}
 
@@ -402,8 +402,6 @@
 			$class = self::getClass();
 			self::injectUnion($settings[$class]['union'], $template);
 			self::parseDependencies($settings[$class]['union'], $template);
-
-			var_dump($settings);
 
 			// @todo Sort
 			return sprintf($template,
