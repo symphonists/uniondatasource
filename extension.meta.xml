@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension id="uniondatasource">
+<extension id="uniondatasource" status="experimental" xmlns="http://symphony-cms.com/schemas/extension/1.0">
 	<name>Union Datasource</name>
 	<description>Unify your datasources into a single stream</description>
 	<repo type="github">https://github.com/brendo/uniondatasource</repo>
