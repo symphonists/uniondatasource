@@ -203,7 +203,7 @@
 			Administration::instance()->Page->addScriptToHead(URL . '/extensions/uniondatasource/assets/uniondatasource.datasources.js', 104);
 
 			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . __CLASS__);
+			$fieldset->setAttribute('class', 'settings contextual ' . $class);
 			$fieldset->appendChild(new XMLElement('legend', self::getName()));
 
 			$p = new XMLElement('p', __('These datasources will have their output combined into a single datasource and executed in this order.'));
@@ -237,18 +237,17 @@
 				$header->appendChild(
 					new XMLElement('h4', $about['name'])
 				);
-				$li->appendChild($header);
-
-				// Content
-				$li->appendChild(
+				$header->appendChild(
 					Widget::Input('fields[' . $class . '][union][' . $i . ']', $handle, 'hidden')
 				);
-				$li->appendChild(
+				$header->appendChild(
 					Widget::Input('fields[' . $class . '][union-sort][' . $i . ']', $datasource->dsParamSORT, 'hidden')
 				);
-				$li->appendChild(
+				$header->appendChild(
 					Widget::Input('fields[' . $class . '][union-order][' . $i . ']', $datasource->dsParamORDER, 'hidden')
 				);
+
+				$li->appendChild($header);
 				$ol->appendChild($li);
 				$i++;
 			}
@@ -269,18 +268,17 @@
 					$header->appendChild(
 						new XMLElement('h4', $about['name'])
 					);
-					$li->appendChild($header);
 
-					// Content
-					$li->appendChild(
+					$header->appendChild(
 						Widget::Input('fields[' . $class . '][union][' . $key . ']', $handle, 'hidden')
 					);
-					$li->appendChild(
+					$header->appendChild(
 						Widget::Input('fields[' . $class . '][union-sort][' . $key . ']', $datasource->dsParamSORT, 'hidden')
 					);
-					$li->appendChild(
+					$header->appendChild(
 						Widget::Input('fields[' . $class . '][union-order][' . $key . ']', $datasource->dsParamORDER, 'hidden')
 					);
+					$li->appendChild($header);
 					$ol->appendChild($li);
 				}
 			}
@@ -299,7 +297,7 @@
 
 		// Add Sorting/Pagination
 			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . __CLASS__);
+			$fieldset->setAttribute('class', 'settings contextual ' . $class);
 			$fieldset->appendChild(new XMLElement('legend', __('Sorting and Limiting')));
 
 			$p = new XMLElement('p', __('Use <code>{$param}</code> syntax to limit by page parameters. <br />All sorting is defined by the first datasource in the union.'));
@@ -352,7 +350,7 @@
 			$wrapper->appendChild($fieldset);
 
 			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . __CLASS__);
+			$fieldset->setAttribute('class', 'settings contextual ' . $class);
 			$fieldset->appendChild(new XMLElement('legend', __('Output Options')));
 
 			$label = Widget::Label(__('Required URL Parameter'));
@@ -548,7 +546,7 @@
 				if(!empty($data['sort'])) {
 					// We just want the column that the field uses internally to sort by with MySQL
 					// We'll use this field and sort in PHP instead
-					preg_match('/ORDER BY[\s\S]*(`ed`\..*)[\s\S]*(ASC|DESC)$/i', $data['sort'], $sort_field);
+					preg_match('/ORDER BY[\s\S]*(`.*`\..*)[\s\S]*(ASC|DESC)$/i', $data['sort'], $sort_field);
 
 					// The new ORDER BY syntax in Symphony 2.2.2 isn't compatible with what
 					// we want for the purposes of UNION, so lets rewrite the ORDER BY to
@@ -557,13 +555,14 @@
 						$data['sort'] = 'ORDER BY ' . $sort_field[1] . ' ' . $sort_field[2];
 					}
 
-					$data['sort'] = preg_replace('/`ed`\./', '', $data['sort']);
+					$data['sort'] = preg_replace('/`(.*)`\./', '', $data['sort']);
 
 					// New changes to sorting mean that there possibly wont't be a join
-					// on the `ed` table. `ed` is commonly used to entries_data_. If the
-					// join is omitted from `$joins`, we'll add the default join ourselves
-					if(!preg_match('/`ed`/', $joins)) {
-						$joins .= "LEFT OUTER JOIN `tbl_entries_data_" . $field->get('id') . "` AS `ed` ON (`e`.`id` = `ed`.`entry_id`)";
+					// on the entry data table. If the join is omitted from `$joins`,
+					// we'll add the default join ourselves
+					preg_match('/^`(.*)`\./i', $sort_field[1], $tbl_alias);
+					if(!preg_match('/`' . $tbl_alias[1] . '`/', $joins)) {
+						$joins .= sprintf("LEFT OUTER JOIN `tbl_entries_data_%1$d` AS `%2$s` ON (`e`.`id` = `%2$s`.`entry_id`)", $field->get('id'), $tbl_alias[1]);
 					}
 				}
 			}
