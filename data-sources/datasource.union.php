@@ -273,10 +273,10 @@
 						Widget::Input('fields[' . $class . '][union][' . $key . ']', $handle, 'hidden')
 					);
 					$header->appendChild(
-						Widget::Input('fields[' . $class . '][union-sort][' . $key . ']', $datasource->dsParamSORT, 'hidden')
+						Widget::Input('fields[' . $class . '][union-sort][' . $key . ']', $datasources[$handle]->dsParamSORT, 'hidden')
 					);
 					$header->appendChild(
-						Widget::Input('fields[' . $class . '][union-order][' . $key . ']', $datasource->dsParamORDER, 'hidden')
+						Widget::Input('fields[' . $class . '][union-order][' . $key . ']', $datasources[$handle]->dsParamORDER, 'hidden')
 					);
 					$li->appendChild($header);
 					$ol->appendChild($li);

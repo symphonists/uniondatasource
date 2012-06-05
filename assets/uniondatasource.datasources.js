@@ -16,8 +16,12 @@ jQuery(document).ready(function() {
 				var $self = $(this),
 					sort = $self.find('input[name*=union-sort]').val(),
 					order = $self.find('input[name*=union-order]').val(),
-					$existing_sort = $sort.find('option[value=' + sort + ']'),
-					$existing_order = $order.find('option[value=' + order + ']');
+					$existing_sort = $sort.find('option').filter(function() {
+						return $(this).text() === sort;
+					}),
+					$existing_order = $order.find('option').filter(function() {
+						return $(this).text() === order;
+					});
 
 				// If this sort field already exists, select it
 				if($existing_sort.length) {
