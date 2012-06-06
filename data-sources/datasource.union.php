@@ -424,18 +424,29 @@
 		 * @return XMLElement
 		 */
 		public function grab(array &$param_pool = null) {
+			$result = new XMLElement($this->dsParamROOTELEMENT);
 			$this->_param_pool = $param_pool;
 			$this->data = array();
 
 			// Loop over all the unions and get a Datasource object
 			foreach($this->dsParamUNION as $handle) {
-				$this->datasources[$handle]['datasource'] = DatasourceManager::create(
-					str_replace('-','_', $handle), $this->_env, true
-				);
+				try {
+					$this->datasources[$handle]['datasource'] = DatasourceManager::create(
+						str_replace('-','_', $handle), $this->_env, true
+					);
 
-				$this->datasources[$handle]['section'] = SectionManager::fetch(
-					$this->datasources[$handle]['datasource']->getSource()
-				);
+					$this->datasources[$handle]['section'] = SectionManager::fetch(
+						$this->datasources[$handle]['datasource']->getSource()
+					);
+				}
+				catch(Exception $ex) {
+					// #13. Datasource may have been renamed or deleted
+					// TODO: Update when 2.3.1 is out to automatically rename UD files
+					// when Datasources are deleted or renamed.
+					$result->appendChild(
+						new XMLElement('error', __('The %s data source is missing and has been ignored.', array('<code>' . $handle . '</code>')))
+					);
+				}
 			}
 
 			// Loop over all the datasource objects, getting the Entry ID's
@@ -467,7 +478,7 @@
 				'filters' => $this->dsParamFILTERS
 			));
 
-			return $this->output($entries, $param_pool);
+			return $this->output($result, $entries, $param_pool);
 		}
 
 	/*-------------------------------------------------------------------------
@@ -769,15 +780,12 @@
 		 *  run a group on each section before merging the array together... which has it's own set
 		 *  of problems, not happening anytime soon unfortunately.
 		 */
-		public function output($entries, &$param_pool) {
+		public function output(XMLElement &$result, $entries, &$param_pool) {
 			if(!isset($entries['records'])) {
 				if($this->dsParamREDIRECTONEMPTY == 'yes'){
 					throw new FrontendPageNotFoundException;
 				}
 				$result = $this->emptyXMLSet();
-			}
-			else {
-				$result = new XMLElement($this->dsParamROOTELEMENT);
 			}
 
 			// Add Pagination
