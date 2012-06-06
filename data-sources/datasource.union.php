@@ -257,6 +257,7 @@
 					if(!isset($datasources[$handle])) continue;
 
 					$about = $datasources[$handle]->about();
+					$source = SectionManager::fetch($datasources[$handle]->getSource());
 
 					// Instance
 					$li = new XMLElement('li');
@@ -267,6 +268,9 @@
 					$header = new XMLElement('header');
 					$header->appendChild(
 						new XMLElement('h4', $about['name'])
+					);
+					$header->appendChild(
+						new XMLElement('span', $source->get('name'), array('class' => 'type'))
 					);
 
 					$header->appendChild(
@@ -335,8 +339,8 @@
 			$label = Widget::Label();
 			$input = array(
 				Widget::Input('fields[' . $class . '][paginate_results]', NULL, 'checkbox', ($settings['paginate_results'] == 'yes' ? array('checked' => 'checked') : NULL)),
-				Widget::Input('fields[' . $class . '][max_records]', $settings['max_records'], NULL, array('size' => '6')),
-				Widget::Input('fields[' . $class . '][page_number]', $settings['page_number'], NULL, array('size' => '6'))
+				Widget::Input('fields[' . $class . '][max_records]', $settings['max_records'], NULL, array('size' => '6', 'type' => 'text')),
+				Widget::Input('fields[' . $class . '][page_number]', $settings['page_number'], NULL, array('size' => '6', 'type' => 'text'))
 			);
 			$label->setValue(__('%s Paginate results, limiting to %s entries per page. Return page %s', array($input[0]->generate(false), $input[1]->generate(false), $input[2]->generate(false))));
 
