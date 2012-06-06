@@ -5,3 +5,7 @@
 .UnionDatasource .frame > ol > li .content {
 	padding:  0;
 }
+.UnionDatasource .frame > ol > li header .type {
+	margin-left: 10px;
+	color: #3F69A5;
+}

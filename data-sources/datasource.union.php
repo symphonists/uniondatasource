@@ -206,8 +206,8 @@
 			$fieldset->setAttribute('class', 'settings contextual ' . $class);
 			$fieldset->appendChild(new XMLElement('legend', self::getName()));
 
-			$p = new XMLElement('p', __('These datasources will have their output combined into a single datasource and executed in this order.'));
-			$p->setAttribute('class', 'help contextual');
+			$p = new XMLElement('p', __('These data sources will have their output combined into a single data source and executed in this order.'));
+			$p->setAttribute('class', 'help');
 			$fieldset->appendChild($p);
 
 			// Datasources
@@ -270,7 +270,7 @@
 						new XMLElement('h4', $about['name'])
 					);
 					$header->appendChild(
-						new XMLElement('span', $source->get('name'), array('class' => 'type'))
+						Widget::Anchor($source->get('name'), SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name'])), NULL, NULL, array('class' => 'type'))
 					);
 
 					$header->appendChild(
@@ -304,7 +304,7 @@
 			$fieldset->setAttribute('class', 'settings contextual ' . $class);
 			$fieldset->appendChild(new XMLElement('legend', __('Sorting and Limiting')));
 
-			$p = new XMLElement('p', __('Use <code>{$param}</code> syntax to limit by page parameters. <br />All sorting is defined by the first datasource in the union.'));
+			$p = new XMLElement('p', __('All sorting is defined by the first data source in the union. Use <code>{$param}</code> syntax to limit pagination by page parameters.'));
 			$p->setAttribute('class', 'help');
 			$fieldset->appendChild($p);
 
