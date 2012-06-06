@@ -1,3 +1,7 @@
+.UnionDatasource .frame > ol > li header {
+	border-bottom: 0;
+	box-shadow: none;
+}
 .UnionDatasource .frame > ol > li .content {
 	padding:  0;
 }
