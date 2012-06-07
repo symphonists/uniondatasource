@@ -191,7 +191,6 @@
 		public static function buildEditor(XMLElement $wrapper, array &$errors = array(), array $settings = null, $handle = null) {
 			$class = self::getClass();
 			$settings = $settings[$class];
-			$settings['paginate_results'] = ($settings['paginate_results'] == 'on') ? 'yes' : 'no';
 
 			if(!is_null($handle) and isset($settings['union'])) {
 				$sort_ds = DatasourceManager::create(str_replace('-','_', $settings['union'][0]), array(), false);
@@ -405,7 +404,9 @@
 			self::injectUnion($settings[$class]['union'], $template);
 			self::parseDependencies($settings[$class]['union'], $template);
 
-			// @todo Sort
+			$settings[$class]['paginate_results'] = ($settings[$class]['paginate_results'] == 'on') ? 'yes' : 'no';
+			$settings[$class]['redirect_on_empty'] = isset($settings[$class]['redirect_on_empty']) ? 'yes' : 'no';
+
 			return sprintf($template,
 				$params['rootelement'], // rootelement
 				$settings[$class]['paginate_results'],
@@ -442,6 +443,13 @@
 					$this->datasources[$handle]['section'] = SectionManager::fetch(
 						$this->datasources[$handle]['datasource']->getSource()
 					);
+
+					$result->appendChild(
+						new XMLElement('section', $this->datasources[$handle]['section']->get('name'), array(
+							'id' => $this->datasources[$handle]['section']->get('id'),
+							'handle' => $this->datasources[$handle]['section']->get('handle')
+						))
+					);
 				}
 				catch(Exception $ex) {
 					// #13. Datasource may have been renamed or deleted
@@ -451,6 +459,14 @@
 						new XMLElement('error', __('The %s data source is missing and has been ignored.', array('<code>' . $handle . '</code>')))
 					);
 				}
+			}
+
+			// If the Datasource has $this->dsParamREQUIREDPARAM set and that param
+			// doesn't exist, then _force_empty_result will be set to true before this
+			// Datasource is executed (this happens in Frontend Page)
+			if($this->_force_empty_result == true){
+				$this->emptyXMLSet($result);
+				return $result;
 			}
 
 			// Loop over all the datasource objects, getting the Entry ID's
@@ -464,7 +480,10 @@
 				$this->data['sql'][] = $data['sql'];
 			}
 
-			$entries = $this->fetchByPage(1, $this->dsParamLimit);
+			$entries = $this->fetchByPage(
+				($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
+				$this->dsParamLIMIT
+			);
 
 			/**
 			 * Immediately after building entries allow modification of the Data Source entry list
@@ -627,11 +646,6 @@
 		 *  Entry objects
 		 */
 		public function fetchByPage($page = 1, $entriesPerPage) {
-			$group = false;
-			$joins = '';
-			$wheres = '';
-			$order = '';
-
 			if(empty($this->data['sql'])) return array();
 
 			$sql = implode(" UNION ALL ", $this->data['sql']);
@@ -644,10 +658,7 @@
 
 			// Apply Pagination
 			if($this->dsParamPAGINATERESULTS == 'yes') {
-				$sql = $sql . sprintf(' LIMIT %d, %d',
-					($this->dsParamSTARTPAGE == 1) ? 0 : ($this->dsParamSTARTPAGE - 1) * $this->dsParamLIMIT,
-					$this->dsParamLIMIT
-				);
+				$sql = $sql . sprintf(' LIMIT %d, %d', $page, $entriesPerPage);
 			}
 
 			$rows = Symphony::Database()->fetch($sql);
@@ -785,39 +796,29 @@
 		 *  of problems, not happening anytime soon unfortunately.
 		 */
 		public function output(XMLElement &$result, $entries, &$param_pool) {
-			if(!isset($entries['records'])) {
+			if(!isset($entries['records']) or empty($entries['records'])) {
 				if($this->dsParamREDIRECTONEMPTY == 'yes'){
 					throw new FrontendPageNotFoundException;
 				}
-				$result = $this->emptyXMLSet();
 			}
 
 			// Add Pagination
 			if(is_array($this->dsParamINCLUDEDELEMENTS) && in_array('system:pagination', $this->dsParamINCLUDEDELEMENTS)) {
-				$t = ($this->dsParamPAGINATERESULTS == 'yes' && isset($this->dsParamLIMIT) && $this->dsParamLIMIT >= 0 ? $this->dsParamLIMIT : $entries['total-entries']);
-
 				$pagination_element = General::buildPaginationElement(
 					$entries['total-entries'],
-					$entries['total-pages'],
-					$t,
-					($this->dsParamPAGINATERESULTS == 'yes' && $this->dsParamSTARTPAGE > 0 ? $this->dsParamSTARTPAGE : 1));
+					($this->dsParamPAGINATERESULTS == 'yes') ? max(1, ceil($entries['total-entries'] * (1 / $this->dsParamLIMIT))) : 1,
+					($this->dsParamPAGINATERESULTS == 'yes' && isset($this->dsParamLIMIT) && $this->dsParamLIMIT >= 0 ? $this->dsParamLIMIT : $entries['total-entries']),
+					($this->dsParamPAGINATERESULTS == 'yes' && $this->dsParamSTARTPAGE > 0 ? $this->dsParamSTARTPAGE : 1)
+				);
 
 				if($pagination_element instanceof XMLElement && $result instanceof XMLElement){
 					$result->prependChild($pagination_element);
 				}
 			}
 
-			foreach($this->datasources as $handle => $datasource) {
-				$result->appendChild(
-					new XMLElement('section', $datasource['section']->get('name'), array(
-						'id' => $datasource['section']->get('id'),
-						'handle' => $datasource['section']->get('handle')
-					))
-				);
-			}
-
 			// If there is no records, return early
-			if(!isset($entries['records'])) {
+			if(!isset($entries['records']) or empty($entries['records'])) {
+				$this->emptyXMLSet($result);
 				return $result;
 			}
 
