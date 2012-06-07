@@ -1,10 +1,15 @@
 <?php
 
-	require_once(EXTENSIONS . '/uniondatasource/lib/class.uniondatasource.php');
+	require_once(EXTENSIONS . '/uniondatasource/data-sources/datasource.union.php');
 
 	Class datasource<!-- CLASS NAME --> extends UnionDatasource{
 
-		<!-- VAR LIST -->
+		public $dsParamROOTELEMENT = '%s';
+		public $dsParamPAGINATERESULTS = '%s';
+		public $dsParamSTARTPAGE = '%s';
+		public $dsParamLIMIT = '%s';
+		public $dsParamREDIRECTONEMPTY = '%s';
+		public $dsParamREQUIREDPARAM = '%s';
 
 		<!-- UNION -->
 
@@ -12,8 +17,8 @@
 			'system:pagination'
 		);
 
-		public function __construct(&$parent, $env=NULL, $process_params=true){
-			parent::__construct($parent, $env, $process_params);
+		public function __construct($env=NULL, $process_params=true){
+			parent::__construct($env, $process_params);
 			$this->_dependencies = array(<!-- DS DEPENDENCY LIST -->);
 		}
 
@@ -27,6 +32,10 @@
 				'version' => 'Union Datasource <!-- VERSION -->',
 				'release-date' => '<!-- RELEASE DATE -->'
 			);
+		}
+
+		public function allowEditorToParse(){
+			return true;
 		}
 
 	}

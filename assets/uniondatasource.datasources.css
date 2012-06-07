@@ -1,15 +1,12 @@
-ol.union-duplicator > .instance {
-	border-bottom: none;
+.UnionDatasource .frame > ol > li header {
+	border-bottom: 0;
+	box-shadow: none;
 }
-
-ol.union-duplicator > .instance > .content {
-	padding: 0;
+.UnionDatasource .frame > ol > li .content {
+	padding:  0;
 }
-
-#error ol.union-duplicator {
-	margin-bottom: 0;
-}
-
-#error p {
-	padding-top: .75em;
+.UnionDatasource .frame > ol > li h4 a {
+	font-weight: normal;
+	margin-top: 0;
+	color: #3F69A5;
 }
