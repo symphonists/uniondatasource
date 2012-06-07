@@ -267,10 +267,10 @@
 					// Header
 					$header = new XMLElement('header');
 					$header->appendChild(
-						new XMLElement('h4', $about['name'])
+						new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name']))))
 					);
 					$header->appendChild(
-						Widget::Anchor($source->get('name'), SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name'])), NULL, NULL, array('class' => 'type'))
+						new XMLElement('span', $source->get('name'), array('class' => 'type'))
 					);
 
 					$header->appendChild(
