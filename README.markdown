@@ -1,11 +1,6 @@
 # Union Datasource
 
-* Version: 1.0
-* Author: Brendan Abbott
-* Build Date: June 7th, 2012
-* Requirements: Symphony 2.3
-
-The Union Datasource extension allows you to combine multiple Data Sources to output as a single DataSource for the primary purpose of a unified pagination.
+The Union Datasource extension allows you to combine multiple Data Sources to output as a single Data Source for the primary purpose of a unified pagination.
 
 ## How do I use it?
 

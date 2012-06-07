@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension id="uniondatasource" status="released" xmlns="http://symphony-cms.com/schemas/extension/1.0">
 	<name>Union Datasource</name>
-	<description>Unify your datasources into a single stream</description>
+	<description>The Union Datasource extension allows you to combine multiple Data Sources to output as a single Data Source for the primary purpose of a unified pagination.</description>
 	<repo type="github">https://github.com/brendo/uniondatasource</repo>
 	<url type="discuss">http://symphony-cms.com/discuss/thread/66151/</url>
 	<types>
@@ -14,6 +14,10 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.0.1" date="2012-06-07" min="2.3">
+			* [#19](https://github.com/brendo/uniondatasource/issues/19) Link colour when ordering Data Sources
+			* [#18](https://github.com/brendo/uniondatasource/issues/18) Wrong handles for Data Source links
+		</release>
 		<release version="1.0" date="2012-06-07" min="2.3">
 			* Updated to use Symphony 2.3 Providers
 			* Support redirecting to a 404 page when no results are found
