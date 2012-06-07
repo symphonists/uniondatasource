@@ -225,6 +225,7 @@
 			$i = 0;
 			foreach($datasources as $handle => $datasource) {
 				$about = $datasource->about();
+				$source = SectionManager::fetch($datasources[$handle]->getSource());
 
 				// Template
 				$li = new XMLElement('li');
@@ -234,7 +235,10 @@
 				// Header
 				$header = new XMLElement('header');
 				$header->appendChild(
-					new XMLElement('h4', $about['name'])
+					new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name']))))
+				);
+				$header->appendChild(
+					new XMLElement('span', $source->get('name'), array('class' => 'type'))
 				);
 				$header->appendChild(
 					Widget::Input('fields[' . $class . '][union][' . $i . ']', $handle, 'hidden')
