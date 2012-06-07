@@ -236,7 +236,7 @@
 				$header = new XMLElement('header');
 				$header->setAttribute('data-name', $about['name'] . ' (' . $source->get('name') . ')');
 				$header->appendChild(
-					new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name']))))
+					new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'. str_replace('-', '_', $handle) .'/', __('View the %s Data Source', array($about['name']))))
 				);
 				$header->appendChild(
 					new XMLElement('span', $source->get('name'), array('class' => 'type'))
@@ -272,7 +272,7 @@
 					$header = new XMLElement('header');
 					$header->setAttribute('data-name', $about['name'] . ' (' . $source->get('name') . ')');
 					$header->appendChild(
-						new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'.$handle.'/', __('View the %s Data Source', array($about['name']))))
+						new XMLElement('h4', Widget::Anchor($about['name'], SYMPHONY_URL . '/blueprints/datasources/edit/'. str_replace('-', '_', $handle) .'/', __('View the %s Data Source', array($about['name']))))
 					);
 					$header->appendChild(
 						new XMLElement('span', $source->get('name'), array('class' => 'type'))
