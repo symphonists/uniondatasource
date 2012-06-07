@@ -10,3 +10,6 @@
 	margin-top: 0;
 	color: #3F69A5;
 }
+.UnionDatasource .frame > ol > li.ordering h4 a {
+	color: #FFF;
+}
