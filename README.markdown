@@ -1,21 +1,29 @@
 # Union Datasource
 
-* Version: 0.6
+* Version: 1.0
 * Author: Brendan Abbott
-* Build Date: 2012-01-11
-* Requirements: Symphony 2.2
+* Build Date: June 7th, 2012
+* Requirements: Symphony 2.3
 
-A union datasource allows you to combine multiple datasources to output as a single datasource for the primary purpose of a unified pagination.
+The Union Datasource extension allows you to combine multiple Data Sources to output as a single DataSource for the primary purpose of a unified pagination.
 
 ## How do I use it?
 
-1. Install this extension.
+1. Install this extension by copying `/uniondatasource` folder to your `/extensions` folder. Then navigation to the System > Extensions page in the Symphony backend page, select the Union Datasource extension and then apply the "Enable/Install".
 
-2. Create your datasources as usual
+2. Create your Data Sources as usual through the Datasource Editor
 
-3. Navigate to Blueprints -> Union Datasources to create your Union Datasource
+3. To Create your Union Datasource, create a new Datasource via the Datasource Editor, but choose Union Datasource as the Source. You can now add the datasources you created in Step 2.
 
-4. Add Union Datasource to pages as you normally would
+4. Add the resulting Union Datasource to your frontend pages as you normally would
+
+5. Dance!
+
+## Use case
+
+You may have two sections, News and Tweets that you'd like to display as a single stream on the frontend. At the moment, this is difficult as the pagination for both these datasources is different and will start to lead to unpredictable results as you paginate through. Not to mention the complexity in XSLT to merge the two datasources together and sort the result.
+
+This extension allows you to create your two datasources as you normally would, say 'Read News by Date' and 'Read Tweets by Date' complete with their own Filtering and Included Elements and then combine the two datasources together. A third datasource, which is the Union Datasource, is created which will control your Pagination and use it's name as the datasource root element in your XML.
 
 ## Caveats
 

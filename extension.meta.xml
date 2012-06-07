@@ -14,8 +14,10 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="0.7" min="2.3">
-			* Completely updated to use Providers that are new with Symphony 2.3
+		<release version="1.0" date="2012-06-07" min="2.3">
+			* Updated to use Symphony 2.3 Providers
+			* Support redirecting to a 404 page when no results are found
+			* Support required parameters
 		</release>
 		<release version="0.6" date="2012-01-11" min="2.2" max='2.2.x'>
 			* Add support for dependencies. Datasources included in a Union Datasource will now resolve dependencies. Resave your existing Union Datasources to unlock this achievement. Fixes [#7](https://github.com/brendo/uniondatasource/issues/7)
