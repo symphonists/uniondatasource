@@ -457,6 +457,9 @@
 						))
 					);
 				}
+				catch(FrontendPageNotFoundException $ex) {
+					throw $ex;
+				}
 				catch(Exception $ex) {
 					// #13. Datasource may have been renamed or deleted
 					// TODO: Update when 2.3.1 is out to automatically rename UD files
