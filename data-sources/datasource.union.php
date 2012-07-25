@@ -451,7 +451,7 @@
 					);
 
 					$result->appendChild(
-						new XMLElement('section', $this->datasources[$handle]['section']->get('name'), array(
+						new XMLElement('section', htmlentities($this->datasources[$handle]['section']->get('name')), array(
 							'id' => $this->datasources[$handle]['section']->get('id'),
 							'handle' => $this->datasources[$handle]['section']->get('handle')
 						))
