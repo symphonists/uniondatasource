@@ -605,7 +605,13 @@
 					// we'll add the default join ourselves
 					preg_match('/^`(.*)`\./i', $sort_field[1], $tbl_alias);
 					if(!preg_match('/`' . $tbl_alias[1] . '`/', $joins)) {
-						$joins .= sprintf("LEFT OUTER JOIN `tbl_entries_data_%1$d` AS `%2$s` ON (`e`.`id` = `%2$s`.`entry_id`)", $field->get('id'), $tbl_alias[1]);
+						$joins .= sprintf('
+								LEFT OUTER JOIN `tbl_entries_data_%1$d` AS `%2$s`
+								ON (`e`.`id` = `%2$s`.`entry_id`)
+							',
+							$field->get('id'),
+							$tbl_alias[1]
+						);
 					}
 				}
 			}
@@ -621,13 +627,13 @@
 			}
 
 			$data['section'][$datasource->getSource()] = $datasource_schema;
-			$data['sql'] = sprintf("
+			$data['sql'] = sprintf('
 					SELECT `e`.id as id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date`%s
 					FROM `tbl_entries` AS `e`
 					%s
 					WHERE `e`.`section_id` = %d
 					%s
-				",
+				',
 				(is_array($sort_field) ? ', ' . $sort_field[1] : ''),
 				$joins,
 				$datasource->getSource(),
