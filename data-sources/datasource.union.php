@@ -380,25 +380,27 @@
 		}
 
 		public static function validate(array &$settings, array &$errors) {
-			if(!is_array($settings[self::getClass()]['union']) || empty($settings[self::getClass()]['union'])) {
+			$settings = $settings[self::getClass()];
+
+			if(!is_array($settings['union']) || empty($settings['union'])) {
 				$errors[self::getClass()]['union'] = __('At least one datasource is required to build a Union Datasource');
 			}
 
-			if(strlen(trim($settings[self::getClass()]['page_number'])) == 0 || (is_numeric($settings[self::getClass()]['page_number']) && $settings[self::getClass()]['page_number'] < 1)){
-				if (isset($settings[self::getClass()]['paginate_results'])) {
+			if(strlen(trim($settings['page_number'])) == 0 || (is_numeric($settings['page_number']) && $settings['page_number'] < 1)){
+				if (isset($settings['paginate_results'])) {
 					$errors[self::getClass()]['page_number'] = __('A page number must be set');
 				}
 			}
-			else if(!self::__isValidPageString($settings[self::getClass()]['page_number'])){
+			else if(!self::__isValidPageString($settings['page_number'])){
 				$errors[self::getClass()]['page_number'] = __('Must be a valid number or parameter');
 			}
 
-			if(strlen(trim($settings[self::getClass()]['max_records'])) == 0 || (is_numeric($settings[self::getClass()]['max_records']) && $settings[self::getClass()]['max_records'] < 1)){
-				if (isset($settings[self::getClass()]['paginate_results'])) {
+			if(strlen(trim($settings['max_records'])) == 0 || (is_numeric($settings['max_records']) && $settings['max_records'] < 1)){
+				if (isset($settings['paginate_results'])) {
 					$errors[self::getClass()]['max_records'] = __('A result limit must be set');
 				}
 			}
-			else if(!self::__isValidPageString($settings[self::getClass()]['max_records'])){
+			else if(!self::__isValidPageString($settings['max_records'])){
 				$errors[self::getClass()]['max_records'] = __('Must be a valid number or parameter');
 			}
 
@@ -657,7 +659,7 @@
 		public function fetchByPage($page = 1, $entriesPerPage) {
 			if(empty($this->data['sql'])) return array();
 
-			$sql = implode(" UNION ALL ", $this->data['sql']);
+			$sql = trim(implode(" UNION ALL ", $this->data['sql']));
 
 			// Add SQL_CALC_FOUND_ROWS to the first SELECT.
 			$sql = preg_replace('/^SELECT `e`.id/', 'SELECT SQL_CALC_FOUND_ROWS `e`.id', $sql, 1);
@@ -1046,4 +1048,4 @@
 		}
 	}
 
-	return 'RemoteDatasource';
+	return 'UnionDatasource';
