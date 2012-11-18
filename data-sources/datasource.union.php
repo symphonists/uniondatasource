@@ -227,6 +227,8 @@
 				$about = $datasource->about();
 				$source = SectionManager::fetch($datasources[$handle]->getSource());
 
+				if(($source instanceof Section) === false) continue;
+
 				// Template
 				$li = new XMLElement('li');
 				$li->setAttribute('class', 'unique template');
@@ -262,6 +264,8 @@
 
 					$about = $datasources[$handle]->about();
 					$source = SectionManager::fetch($datasources[$handle]->getSource());
+
+					if(($source instanceof Section) === false) continue;
 
 					// Instance
 					$li = new XMLElement('li');
@@ -428,6 +432,10 @@
 	/*-------------------------------------------------------------------------
 		Execution
 	-------------------------------------------------------------------------*/
+
+		public function execute(array &$param_pool = null) {
+			return $this->grab($param_pool);
+		}
 
 		/**
 		 * Called from the Datasource, this function will loop over `dsParamUNION`
