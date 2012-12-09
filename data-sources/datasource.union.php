@@ -654,7 +654,7 @@
 		}
 
 		/**
-		 * This function `UNION ALL`'s the datasource SQL and then applies sorting
+		 * This function `UNION DISTINCT`'s the datasource SQL and then applies sorting
 		 * and pagination to the query. Returns an array of Entry objects, with
 		 * pagination given the number of Entry's to return and the current starting
 		 * offset. eg. if there are 60 entries in a section and the pagination
@@ -673,7 +673,7 @@
 		public function fetchByPage($page = 1, $entriesPerPage) {
 			if(empty($this->data['sql'])) return array();
 
-			$sql = trim(implode(" UNION ALL ", $this->data['sql']));
+			$sql = trim(implode(" UNION DISTINCT ", $this->data['sql']));
 
 			// Add SQL_CALC_FOUND_ROWS to the first SELECT.
 			$sql = preg_replace('/^SELECT `e`.id/', 'SELECT SQL_CALC_FOUND_ROWS `e`.id', $sql, 1);
@@ -961,14 +961,25 @@
 						$c = 'NOT IN';
 					}
 
-					$where = " AND `e`.id " . $c . " ('".implode("', '", $value)."') ";
+					// Cast all ID's to integers.
+					$value = array_map(create_function('$x', 'return (int)$x;'),$value);
+					$value = array_filter($value);
+
+					// If there are no ID's, no need to filter. RE: #1567
+					if(!empty($value)) {
+						$where .= " AND `e`.id " . $c . " (".implode(", ", $value).") ";
+					}
 				}
 				else if($field_id == 'system:date') {
 					require_once(TOOLKIT . '/fields/field.date.php');
+					$date_joins = '';
+					$date_where = '';
 					$date = new fieldDate();
-					$date->buildDSRetrievalSQL($value, $joins, $where, ($filter_type == DS_FILTER_AND ? true : false));
+					$date->buildDSRetrievalSQL($value, $date_joins, $date_where, ($filter_type == DS_FILTER_AND ? true : false));
 
-					$where = preg_replace('/`t\d+`.value/', '`e`.creation_date', $where);
+					// Replace the date field where with the `creation_date` or `modification_date`.
+					$date_where = preg_replace('/`t\d+`.date/', ($field_id !== 'system:modification-date') ? '`e`.creation_date_gmt' : '`e`.modification_date_gmt', $date_where);
+					$where .= $date_where;
 				}
 				else {
 					// For deprecated reasons, call the old, typo'd function name until the switch to the
