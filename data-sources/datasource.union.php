@@ -384,27 +384,27 @@
 		}
 
 		public static function validate(array &$settings, array &$errors) {
-			$settings = $settings[self::getClass()];
+			$union_settings = $settings[self::getClass()];
 
-			if(!is_array($settings['union']) || empty($settings['union'])) {
+			if(!is_array($union_settings['union']) || empty($union_settings['union'])) {
 				$errors[self::getClass()]['union'] = __('At least one datasource is required to build a Union Datasource');
 			}
 
-			if(strlen(trim($settings['page_number'])) == 0 || (is_numeric($settings['page_number']) && $settings['page_number'] < 1)){
-				if (isset($settings['paginate_results'])) {
+			if(strlen(trim($union_settings['page_number'])) == 0 || (is_numeric($union_settings['page_number']) && $union_settings['page_number'] < 1)){
+				if (isset($union_settings['paginate_results'])) {
 					$errors[self::getClass()]['page_number'] = __('A page number must be set');
 				}
 			}
-			else if(!self::__isValidPageString($settings['page_number'])){
+			else if(!self::__isValidPageString($union_settings['page_number'])){
 				$errors[self::getClass()]['page_number'] = __('Must be a valid number or parameter');
 			}
 
-			if(strlen(trim($settings['max_records'])) == 0 || (is_numeric($settings['max_records']) && $settings['max_records'] < 1)){
-				if (isset($settings['paginate_results'])) {
+			if(strlen(trim($union_settings['max_records'])) == 0 || (is_numeric($union_settings['max_records']) && $union_settings['max_records'] < 1)){
+				if (isset($union_settings['paginate_results'])) {
 					$errors[self::getClass()]['max_records'] = __('A result limit must be set');
 				}
 			}
-			else if(!self::__isValidPageString($settings['max_records'])){
+			else if(!self::__isValidPageString($union_settings['max_records'])){
 				$errors[self::getClass()]['max_records'] = __('Must be a valid number or parameter');
 			}
 
