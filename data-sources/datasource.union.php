@@ -189,8 +189,9 @@
 	-------------------------------------------------------------------------*/
 
 		public static function buildEditor(XMLElement $wrapper, array &$errors = array(), array $settings = null, $handle = null) {
+			$sort_ds = null;
 			$class = self::getClass();
-			$settings = $settings[$class];
+			$settings = isset($settings[$class]) ? $settings[$class] : array();
 
 			if(!is_null($handle) and isset($settings['union'])) {
 				$sort_ds = DatasourceManager::create(str_replace('-','_', $settings['union'][0]), array(), false);
@@ -258,7 +259,7 @@
 				$i++;
 			}
 
-			if(is_array($settings['union']) && !empty($settings['union'])){
+			if(isset($settings['union']) && is_array($settings['union']) && !empty($settings['union'])){
 				foreach($settings['union'] as $key => $handle) {
 					if(!isset($datasources[$handle])) continue;
 
@@ -331,10 +332,11 @@
 
 			$label = Widget::Label(__('Sort Order'));
 
+			$sort_ds_order = isset($sort_ds->dsParamORDER) ? $sort_ds->dsParamORDER : 'asc';
 			$options = array(
-				array('asc', ('asc' == $sort_ds->dsParamORDER), __('ascending')),
-				array('desc', ('desc' == $sort_ds->dsParamORDER), __('descending')),
-				array('random', ('random' == $sort_ds->dsParamORDER), __('random')),
+				array('asc', ('asc' == $sort_ds_order), __('ascending')),
+				array('desc', ('desc' == $sort_ds_order), __('descending')),
+				array('random', ('random' == $sort_ds_order), __('random')),
 			);
 
 			$label->appendChild(Widget::Select('fields[' . $class . '][order]', $options, array(
@@ -347,9 +349,9 @@
 
 			$label = Widget::Label();
 			$input = array(
-				Widget::Input('fields[' . $class . '][paginate_results]', NULL, 'checkbox', ($settings['paginate_results'] == 'yes' ? array('checked' => 'checked') : NULL)),
-				Widget::Input('fields[' . $class . '][max_records]', $settings['max_records'], NULL, array('size' => '6', 'type' => 'text')),
-				Widget::Input('fields[' . $class . '][page_number]', $settings['page_number'], NULL, array('size' => '6', 'type' => 'text'))
+				Widget::Input('fields[' . $class . '][paginate_results]', NULL, 'checkbox', (isset($settings['paginate_results']) && $settings['paginate_results'] == 'yes' ? array('checked' => 'checked') : NULL)),
+				Widget::Input('fields[' . $class . '][max_records]', isset($settings['max_records']) ? $settings['max_records'] : '10', NULL, array('size' => '6', 'type' => 'text')),
+				Widget::Input('fields[' . $class . '][page_number]', isset($settings['page_number']) ? $settings['page_number'] : '1', NULL, array('size' => '6', 'type' => 'text'))
 			);
 			$label->setValue(__('%s Paginate results, limiting to %s entries per page. Return page %s', array($input[0]->generate(false), $input[1]->generate(false), $input[2]->generate(false))));
 
@@ -368,7 +370,7 @@
 
 			$label = Widget::Label(__('Required URL Parameter'));
 			$label->appendChild(new XMLElement('i', __('Optional')));
-			$label->appendChild(Widget::Input('fields[' . $class . '][required_url_param]', trim($settings['required_url_param'])));
+			$label->appendChild(Widget::Input('fields[' . $class . '][required_url_param]', isset($settings['required_url_param']) ? trim($settings['required_url_param']) : null));
 			$fieldset->appendChild($label);
 
 			$p = new XMLElement('p', __('An empty result will be returned when this parameter does not have a value. Do not wrap the parameter with curly-braces.'));
