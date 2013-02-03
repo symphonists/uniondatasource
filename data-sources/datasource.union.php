@@ -562,7 +562,7 @@
 			}
 
 			// Process Filters
-			$this->processFilters($datasource, $where, $joins, $group);
+			$this->processDatasourceFilters($datasource, $where, $joins, $group);
 
 			/**
 			 * Instead of building Entries individually, build the where and join statements
@@ -880,12 +880,12 @@
 
 				// Add Associated Entry counts to the entry
 				if (!empty($datasource->_associated_sections)) {
-					$this->setAssociatedEntryCounts($datasource, $xEntry, $entry);
+					$this->setDatasourceAssociatedEntryCounts($datasource, $xEntry, $entry);
 				}
 
 				// Add the Symphony 'system:*' parameters to the param pool
-				if($this->canProcessSystemParameters($datasource)) {
-					$this->processSystemParameters($datasource, $entry);
+				if($this->canDatasourceProcessSystemParameters($datasource)) {
+					$this->processDatasourceSystemParameters($datasource, $entry);
 				}
 
 				foreach($data as $field_id => $values) {
@@ -895,7 +895,7 @@
 					}
 
 					// Process output parameters
-					$this->processOutputParameters($datasource, $entry, $field_id, $values);
+					$this->processDatasourceOutputParameters($datasource, $entry, $field_id, $values);
 
 					if (!$datasource->_param_output_only) foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 						list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
@@ -927,7 +927,7 @@
 		Legacy functions for Datasources that don't inherit SectionsDatasource
 	-------------------------------------------------------------------------*/
 
-		public function processFilters(Datasource $datasource, &$where, &$joins, &$group) {
+		public function processDatasourceFilters(Datasource $datasource, &$where, &$joins, &$group) {
 			if(!is_array($datasource->dsParamFILTERS) || empty($datasource->dsParamFILTERS)) return;
 
 			$pool = FieldManager::fetch(array_filter(array_keys($datasource->dsParamFILTERS), 'is_int'));
@@ -992,7 +992,7 @@
 			}
 		}
 
-		public function setAssociatedEntryCounts(Datasource $datasource, XMLElement &$xEntry, Entry $entry) {
+		public function setDatasourceAssociatedEntryCounts(Datasource $datasource, XMLElement &$xEntry, Entry $entry) {
 			$associated_entry_counts = $entry->fetchAllAssociatedEntryCounts($datasource->_associated_sections);
 			if(!empty($associated_entry_counts)){
 				foreach($associated_entry_counts as $section_id => $count){
@@ -1003,7 +1003,7 @@
 			}
 		}
 
-		public function canProcessSystemParameters(Datasource $datasource) {
+		public function canDatasourceProcessSystemParameters(Datasource $datasource) {
 			if(!is_array($datasource->dsParamPARAMOUTPUT)) return false;
 
 			foreach(self::$system_parameters as $system_parameter) {
@@ -1015,7 +1015,7 @@
 			return false;
 		}
 
-		public function processSystemParameters(Datasource $datasource, Entry $entry) {
+		public function processDatasourceSystemParameters(Datasource $datasource, Entry $entry) {
 			if(!isset($datasource->dsParamPARAMOUTPUT)) return;
 
 			// Support the legacy parameter `ds-datasource-handle`
@@ -1041,7 +1041,7 @@
 			}
 		}
 
-		public function processOutputParameters(Datasource $datasource, Entry $entry, $field_id, array $data) {
+		public function processDatasourceOutputParameters(Datasource $datasource, Entry $entry, $field_id, array $data) {
 			if(!isset($datasource->dsParamPARAMOUTPUT)) return;
 
 			// Support the legacy parameter `ds-datasource-handle`
