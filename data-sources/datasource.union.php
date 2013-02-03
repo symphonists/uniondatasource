@@ -65,7 +65,7 @@
 		 *  The path to the Datasource file
 		 * @return string
 		 */
-		public function getSourceColumn($handle) {
+		public static function getSourceColumn($handle) {
 			$datasources = DatasourceManager::listAll();
 			$datasource = DatasourceManager::create($handle, array(), false);
 
@@ -891,7 +891,7 @@
 				foreach($data as $field_id => $values) {
 					// Check to see if we have a Field object already, if not create one
 					if(!isset(self::$field_pool[$field_id]) || !self::$field_pool[$field_id] instanceof Field) {
-						self::$field_pool[$field_id] =& FieldManager::fetch($field_id);
+						self::$field_pool[$field_id] = FieldManager::fetch($field_id);
 					}
 
 					// Process output parameters
