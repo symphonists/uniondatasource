@@ -680,8 +680,8 @@
 			// Add SQL_CALC_FOUND_ROWS to the first SELECT.
 			$sql = preg_replace('/^SELECT `e`.id/', 'SELECT SQL_CALC_FOUND_ROWS `e`.id', $sql, 1);
 
-			// Add the ORDER BY clause
-			$sql = $sql . $this->data['sort'][0];
+            // Add the ORDER BY clause
+            $sql = $sql . sprintf(' %s', trim($this->data['sort'][0]));
 
 			// Apply Pagination
 			if($this->dsParamPAGINATERESULTS == 'yes') {
