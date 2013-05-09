@@ -14,7 +14,9 @@
 		public static $system_parameters = array(
 			'system:id',
 			'system:author',
-			'system:date'
+			'system:creation-date',
+			'system:modification-date',
+			'system:date' // deprecated
 		);
 
 		/**
@@ -587,8 +589,11 @@
 			else if($datasource->dsParamSORT == 'system:id') {
 				$data['sort'] = 'ORDER BY id ' . $datasource->dsParamORDER;
 			}
-			else if($datasource->dsParamSORT == 'system:date') {
+			else if($datasource->dsParamSORT == 'system:date' || $datasource->dsParamSORT == 'system:creation-date') {
 				$data['sort'] = 'ORDER BY creation_date ' . $datasource->dsParamORDER;
+			}
+			else if($datasource->dsParamSORT == 'system:modification-date') {
+				$data['sort'] = 'ORDER BY modification_date ' . $datasource->dsParamORDER;
 			}
 			// Handle real field instances
 			else {
@@ -640,7 +645,7 @@
 
 			$data['section'][$datasource->getSource()] = $datasource_schema;
 			$data['sql'] = sprintf('
-					SELECT `e`.id as id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date`%s
+					SELECT `e`.id as id, `e`.section_id, e.`author_id`, UNIX_TIMESTAMP(e.`creation_date`) AS `creation_date`, UNIX_TIMESTAMP(e.`modification_date`) AS `modification_date`%s
 					FROM `tbl_entries` AS `e`
 					%s
 					WHERE `e`.`section_id` = %d
@@ -681,7 +686,7 @@
 			$sql = preg_replace('/^SELECT `e`.id/', 'SELECT SQL_CALC_FOUND_ROWS `e`.id', $sql, 1);
 
 			// Add the ORDER BY clause
-			$sql = $sql . $this->data['sort'][0];
+			$sql = $sql . ' ' . $this->data['sort'][0];
 
 			// Apply Pagination
 			if($this->dsParamPAGINATERESULTS == 'yes') {
@@ -729,6 +734,8 @@
 				foreach ($element_names as $section_id => $fields) {
 					$field_ids = FieldManager::fetchFieldIDFromElementName($fields, $section_id);
 					if(is_int($field_ids)) $field_ids = array($field_ids);
+
+					if(!is_array($field_ids)) continue;
 
 					$schema = array_merge($schema, $field_ids);
 				}
@@ -787,10 +794,19 @@
 			foreach ($raw as $entry) {
 				$obj = EntryManager::create();
 
-				$obj->creationDate = DateTimeObj::get('c', $entry['meta']['creation_date']);
 				$obj->set('id', $entry['meta']['id']);
 				$obj->set('author_id', $entry['meta']['author_id']);
 				$obj->set('section_id', $entry['meta']['section_id']);
+				$obj->set('creation_date', DateTimeObj::get('c', $entry['meta']['creation_date']));
+
+				if(isset($entry['meta']['modification_date'])) {
+					$obj->set('modification_date', DateTimeObj::get('c', $entry['meta']['modification_date']));
+				}
+				else {
+					$obj->set('modification_date', $obj->get('creation_date'));
+				}
+
+				$obj->creationDate = $obj->get('creation_date');
 
 				if(isset($entry['fields']) && is_array($entry['fields'])){
 					foreach ($entry['fields'] as $field_id => $data) $obj->setData($field_id, $data);
@@ -905,16 +921,24 @@
 					}
 				}
 
-				if($datasource->_param_output_only) return true;
+				if($datasource->_param_output_only) continue;
 
 				// Add in the system:date to the output
-				if(in_array('system:date', $datasource->dsParamINCLUDEDELEMENTS)){
-					$xEntry->appendChild(
+				if(in_array('system:date', $datasource->dsParamINCLUDEDELEMENTS)) {
+					$xDate = new XMLElement('system-date');
+					$xDate->appendChild(
 						General::createXMLDateObject(
-							DateTimeObj::get('U', $entry->creationDate),
-							'system-date'
+							DateTimeObj::get('U', $entry->get('creation_date')),
+							'created'
 						)
 					);
+					$xDate->appendChild(
+						General::createXMLDateObject(
+							DateTimeObj::get('U', $entry->get('modification_date')),
+							'modified'
+						)
+					);
+					$xEntry->appendChild($xDate);
 				}
 
 				$result->appendChild($xEntry);
@@ -934,20 +958,17 @@
 			self::$field_pool += $pool;
 
 			foreach($datasource->dsParamFILTERS as $field_id => $filter){
-
 				if((is_array($filter) && empty($filter)) || trim($filter) == '') continue;
 
-				if(!is_array($filter)){
+				if(!is_array($filter)) {
 					$filter_type = $datasource->__determineFilterType($filter);
-
-					$value = preg_split('/'.($filter_type == DS_FILTER_AND ? '\+' : '(?<!\\\\),').'\s*/', $filter, -1, PREG_SPLIT_NO_EMPTY);
+					$value = preg_split('/'.($filter_type == DataSource::FILTER_AND ? '\+' : '(?<!\\\\),').'\s*/', $filter, -1, PREG_SPLIT_NO_EMPTY);
 					$value = array_map('trim', $value);
 					$value = array_map(array('Datasource', 'removeEscapedCommas'), $value);
 				}
-
 				else $value = $filter;
 
-				if($field_id != 'id' && $field_id != 'system:date' && !(self::$field_pool[$field_id] instanceof Field)){
+				if(!in_array($field_id, self::$system_parameters) && $field_id != 'id' && !(self::$field_pool[$field_id] instanceof Field)){
 					throw new Exception(
 						__(
 							'Error creating field object with id %1$d, for filtering in data source %2$s. Check this field exists.',
@@ -956,7 +977,8 @@
 					);
 				}
 
-				if($field_id == 'id') {
+				// Support system:id as well as the old 'id'. #1691
+				if($field_id === 'system:id' || $field_id === 'id') {
 					$c = 'IN';
 					if(stripos($value[0], 'not:') === 0) {
 						$value[0] = preg_replace('/^not:\s*/', null, $value[0]);
@@ -965,19 +987,28 @@
 
 					// Cast all ID's to integers.
 					$value = array_map(create_function('$x', 'return (int)$x;'),$value);
+					$count = array_sum($value);
 					$value = array_filter($value);
+
+					// If the ID was cast to 0, then we need to filter on 'id' = 0,
+					// which will of course return no results, but without it the
+					// Datasource will return ALL results, which is not the
+					// desired behaviour. RE: #1619
+					if($count === 0) {
+						$value[] = '0';
+					}
 
 					// If there are no ID's, no need to filter. RE: #1567
 					if(!empty($value)) {
 						$where .= " AND `e`.id " . $c . " (".implode(", ", $value).") ";
 					}
 				}
-				else if($field_id == 'system:date') {
+				else if($field_id === 'system:creation-date' || $field_id === 'system:modification-date' || $field_id === 'system:date') {
 					require_once(TOOLKIT . '/fields/field.date.php');
 					$date_joins = '';
 					$date_where = '';
 					$date = new fieldDate();
-					$date->buildDSRetrievalSQL($value, $date_joins, $date_where, ($filter_type == DS_FILTER_AND ? true : false));
+					$date->buildDSRetrievalSQL($value, $date_joins, $date_where, ($filter_type == DataSource::FILTER_AND ? true : false));
 
 					// Replace the date field where with the `creation_date` or `modification_date`.
 					$date_where = preg_replace('/`t\d+`.date/', ($field_id !== 'system:modification-date') ? '`e`.creation_date_gmt' : '`e`.modification_date_gmt', $date_where);
@@ -986,7 +1017,7 @@
 				else {
 					// For deprecated reasons, call the old, typo'd function name until the switch to the
 					// properly named buildDSRetrievalSQL function.
-					if(!self::$field_pool[$field_id]->buildDSRetrivalSQL($value, $joins, $where, ($filter_type == DS_FILTER_AND ? true : false))){ $datasource->_force_empty_result = true; return; }
+					if(!self::$field_pool[$field_id]->buildDSRetrivalSQL($value, $joins, $where, ($filter_type == DataSource::FILTER_AND ? true : false))){ $datasource->_force_empty_result = true; return; }
 					if(!$group) $group = self::$field_pool[$field_id]->requiresSQLGrouping();
 				}
 			}
@@ -1034,9 +1065,13 @@
 					$datasource->_param_pool[$param_key][] = $entry->get('author_id');
 					if($singleParam) $datasource->_param_pool[$key][] = $entry->get('author_id');
 				}
-				else if($param == 'system:date') {
-					$datasource->_param_pool[$param_key][] = DateTimeObj::get('c', $entry->creationDate);
-					if($singleParam) $datasource->_param_pool[$key][] = DateTimeObj::get('c', $entry->creationDate);
+				else if($param === 'system:creation-date' or $param === 'system:date') {
+					$this->_param_pool[$param_key][] = $entry->get('creation_date');
+					if($singleParam) $this->_param_pool[$key][] = $entry->get('creation_date');
+				}
+				else if($param === 'system:modification-date') {
+					$this->_param_pool[$param_key][] = $entry->get('modification_date');
+					if($singleParam) $this->_param_pool[$key][] = $entry->get('modification_date');
 				}
 			}
 		}
