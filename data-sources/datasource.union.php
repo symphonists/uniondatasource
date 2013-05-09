@@ -195,9 +195,14 @@
 			$class = self::getClass();
 			$settings = isset($settings[$class]) ? $settings[$class] : array();
 
-			if(!is_null($handle) and isset($settings['union'])) {
-				$sort_ds = DatasourceManager::create(str_replace('-','_', $settings['union'][0]), array(), false);
-				$sort_about = $sort_ds->about();
+			try {
+				if(!is_null($handle) and isset($settings['union'])) {
+					$sort_ds = DatasourceManager::create(str_replace('-','_', $settings['union'][0]), array(), false);
+					$sort_about = $sort_ds->about();
+				}
+			}
+			catch (Exception $ex) {
+				Administration::instance()->Page->pageAlert(__('The data source %s was not found. It will be removed from this data source upon resaving.', array('<code>' . $settings['union'][0] . '</code>')), Alert::ERROR);
 			}
 
 			// Add in custom assets
