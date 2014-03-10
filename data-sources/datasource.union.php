@@ -501,9 +501,26 @@
 			foreach($this->datasources as $handle => $datasource) {
 				$data = $this->grab_sql($datasource['datasource']);
 
+				// Section not found, ignore
 				if(!isset($data['section'])) continue;
 
-				$this->data['section'][key($data['section'])] = current($data['section']);
+				$schema = current($data['section']);
+				$key = key($data['section']);
+
+				// Schema found, but empty, ignore, remove to prevent misreads
+				if(empty($schema)) {
+					unset($this->datasources[$handle]);
+					continue;
+				}
+
+				// Schema found, and we already have an existing schema (merge)
+				if(isset($this->data['section'][$key])) {
+					$this->data['section'][$key] = array_merge($this->data['section'][$key], $schema);
+				}
+				else {
+					$this->data['section'][$key] = $schema;
+				}
+
 				$this->data['sort'][] = $data['sort'];
 				$this->data['sql'][] = $data['sql'];
 			}
