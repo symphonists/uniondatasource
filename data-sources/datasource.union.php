@@ -354,16 +354,17 @@
 			self::injectUnion($settings[$class]['union'], $template);
 			self::parseDependencies($settings[$class]['union'], $template);
 
-			$settings[$class]['paginate_results'] = ($settings[$class]['paginate_results'] == 'on') ? 'yes' : 'no';
-			$settings[$class]['redirect_on_empty'] = isset($settings[$class]['redirect_on_empty']) ? 'yes' : 'no';
+			$settings['paginate_results'] = ($settings['paginate_results'] == 'on') ? 'yes' : 'no';
+			$settings['redirect_on_empty'] = isset($settings['redirect_on_empty']) ? 'yes' : 'no';
 
 			return sprintf($template,
 				$params['rootelement'], // rootelement
-				$settings[$class]['paginate_results'],
-				$settings[$class]['page_number'],
-				$settings[$class]['max_records'],
-				$settings[$class]['redirect_on_empty'],
-				$settings[$class]['required_url_param']
+				$settings['paginate_results'],
+				$settings['page_number'],
+				$settings['max_records'],
+				$settings['redirect_on_empty'],
+				$settings['required_url_param'],
+				$settings['negate_url_param']
 			);
 		}
 
@@ -422,7 +423,19 @@
 			// doesn't exist, then _force_empty_result will be set to true before this
 			// Datasource is executed (this happens in Frontend Page)
 			if($this->_force_empty_result == true){
-				$this->emptyXMLSet($result);
+				$this->_force_empty_result = false; //this is so the section info element doesn't disappear.
+				$error = new XMLElement('error', __("Data source not executed, required parameter is missing."), array(
+					'required-param' => $this->dsParamREQUIREDPARAM
+				));
+				$result->appendChild($error);
+
+				return $result;
+			}
+
+			if($this->_negate_result == true){
+				$this->_negate_result = false; //this is so the section info element doesn't disappear.
+				$this->negateXMLSet($result);
+
 				return $result;
 			}
 

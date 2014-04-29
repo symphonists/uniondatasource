@@ -10,6 +10,7 @@
 		public $dsParamLIMIT = '%s';
 		public $dsParamREDIRECTONEMPTY = '%s';
 		public $dsParamREQUIREDPARAM = '%s';
+		public $dsParamNEGATEPARAM = '%s';
 
 		<!-- UNION -->
 
