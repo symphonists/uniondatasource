@@ -979,8 +979,6 @@
 					$where .= $date_where;
 				}
 				else {
-					// For deprecated reasons, call the old, typo'd function name until the switch to the
-					// properly named buildDSRetrievalSQL function.
 					if(!self::$field_pool[$field_id]->buildDSRetrievalSQL($value, $joins, $where, ($filter_type == DataSource::FILTER_AND ? true : false))){ $datasource->_force_empty_result = true; return; }
 					if(!$group) $group = self::$field_pool[$field_id]->requiresSQLGrouping();
 				}

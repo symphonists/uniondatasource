@@ -14,7 +14,11 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="1.0.4" date="2013-09-05" min="2.3.3">
+		<release version="1.1beta1" date="2014-04-29" min="2.4">
+			* Support for Symphony 2.4
+			* Fix issues when using two datasources from the same section
+		</release>
+		<release version="1.0.4" date="2013-09-05" min="2.3.3" max="2.3.6">
 			* [#30](https://github.com/brendo/uniondatasource/issues/30) Add support for modification date
 			* [#28](https://github.com/brendo/uniondatasource/issues/28) Handle when a datasource is renamed and causes the editor to freak out
 			* Fix a bunch of `E_NOTICE`'s and miscellaneous fixes
