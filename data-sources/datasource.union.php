@@ -210,7 +210,8 @@
 			Administration::instance()->Page->addScriptToHead(URL . '/extensions/uniondatasource/assets/uniondatasource.datasources.js', 104);
 
 			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . $class);
+			$fieldset->setAttribute('class', 'settings contextual');
+			$fieldset->setAttribute('data-context', 'union-datasource');
 			$fieldset->appendChild(new XMLElement('legend', self::getName()));
 
 			$p = new XMLElement('p', __('These data sources will have their output combined into a single data source and executed in this order.'));
@@ -219,15 +220,18 @@
 
 			// Datasources
 			$div = new XMLElement('div');
-			$p = new XMLElement('p', __('Add data sources to union'));
-			$p->appendChild(new XMLElement('i', __('Optional')));
+			$p = new XMLElement('p', __('Data Sources'));
+			$p->appendChild(new XMLElement('i', __('The first source determines sort order and direction')));
 			$p->setAttribute('class', 'label');
 			$div->appendChild($p);
 
+			$frame = new XMLElement('div');
+			$frame->setAttribute('class', 'frame union-datasources');
+
 			$ol = new XMLElement('ol');
-			$ol->setAttribute('class', 'union-duplicator');
 			$ol->setAttribute('data-add', __('Add data source'));
 			$ol->setAttribute('data-remove', __('Remove data source'));
+			$frame->appendChild($ol);
 
 			$datasources = self::getValidDatasources();
 			$i = 0;
@@ -306,89 +310,14 @@
 
 			if(isset($errors[$class]['union'])) {
 				$div->appendChild(
-					Widget::Error($ol, $errors[$class]['union'])
+					Widget::Error($frame, $errors[$class]['union'])
 				);
 			}
 			else {
-				$div->appendChild($ol);
+				$div->appendChild($frame);
 			}
 
 			$fieldset->appendChild($div);
-			$wrapper->appendChild($fieldset);
-
-		// Add Sorting/Pagination
-			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . $class);
-			$fieldset->appendChild(new XMLElement('legend', __('Sorting and Limiting')));
-
-			$p = new XMLElement('p', __('All sorting is defined by the first data source in the union. Use <code>{$param}</code> syntax to limit pagination by page parameters.'));
-			$p->setAttribute('class', 'help');
-			$fieldset->appendChild($p);
-
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group');
-
-			$label = Widget::Label(__('Sort By'));
-			$options = array();
-
-			$label->appendChild(Widget::Select('fields[sort]', $options, array(
-				'class' => 'sort-by',
-				'disabled' => 'disabled'
-			)));
-			$div->appendChild($label);
-
-			$label = Widget::Label(__('Sort Order'));
-
-			$sort_ds_order = isset($sort_ds->dsParamORDER) ? $sort_ds->dsParamORDER : 'asc';
-			$options = array(
-				array('asc', ('asc' == $sort_ds_order), __('ascending')),
-				array('desc', ('desc' == $sort_ds_order), __('descending')),
-				array('random', ('random' == $sort_ds_order), __('random')),
-			);
-
-			$label->appendChild(Widget::Select('fields[' . $class . '][order]', $options, array(
-				'class' => 'sort-order',
-				'disabled' => 'disabled'
-			)));
-			$div->appendChild($label);
-
-			$fieldset->appendChild($div);
-
-			$label = Widget::Label();
-			$input = array(
-				Widget::Input('fields[' . $class . '][paginate_results]', NULL, 'checkbox', (isset($settings['paginate_results']) && $settings['paginate_results'] == 'yes' ? array('checked' => 'checked') : NULL)),
-				Widget::Input('fields[' . $class . '][max_records]', isset($settings['max_records']) ? $settings['max_records'] : '10', NULL, array('size' => '6', 'type' => 'text')),
-				Widget::Input('fields[' . $class . '][page_number]', isset($settings['page_number']) ? $settings['page_number'] : '1', NULL, array('size' => '6', 'type' => 'text'))
-			);
-			$label->setValue(__('%s Paginate results, limiting to %s entries per page. Return page %s', array($input[0]->generate(false), $input[1]->generate(false), $input[2]->generate(false))));
-
-			if(isset($errors[self::getClass()]['max_records'])) $fieldset->appendChild(Widget::Error($label, $errors[$class]['max_records']));
-			else if(isset($errors[self::getClass()]['page_number'])) $fieldset->appendChild(Widget::Error($label, $errors[$class]['page_number']));
-			else $fieldset->appendChild($label);
-
-			$p = new XMLElement('p', __('Failing to paginate may degrade performance if the number of entries returned is very high.'), array('class' => 'help'));
-			$fieldset->appendChild($p);
-
-			$wrapper->appendChild($fieldset);
-
-			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'settings contextual ' . $class);
-			$fieldset->appendChild(new XMLElement('legend', __('Output Options')));
-
-			$label = Widget::Label(__('Required URL Parameter'));
-			$label->appendChild(new XMLElement('i', __('Optional')));
-			$label->appendChild(Widget::Input('fields[' . $class . '][required_url_param]', isset($settings['required_url_param']) ? trim($settings['required_url_param']) : null));
-			$fieldset->appendChild($label);
-
-			$p = new XMLElement('p', __('An empty result will be returned when this parameter does not have a value. Do not wrap the parameter with curly-braces.'));
-			$p->setAttribute('class', 'help');
-			$fieldset->appendChild($p);
-
-			$label = Widget::Label();
-			$input = Widget::Input('fields[' . $class . '][redirect_on_empty]', 'yes', 'checkbox', (isset($settings['redirect_on_empty']) && $settings['redirect_on_empty'] == 'yes') ? array('checked' => 'checked') : NULL);
-			$label->setValue(__('%s Redirect to 404 page when no results are found', array($input->generate(false))));
-			$fieldset->appendChild($label);
-
 			$wrapper->appendChild($fieldset);
 		}
 
