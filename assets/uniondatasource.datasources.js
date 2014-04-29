@@ -44,9 +44,6 @@
 		var displaySorting = function() {
 			var first = datasources.find('.instance:visible');
 
-				console.log('display');
-				console.log(first);
-
 			if(!datasources.is('.empty')) {
 				var field = first.find('[name="fields[UnionDatasource][union-sort][0]"]'),
 					direction = first.find('[name="fields[UnionDatasource][union-order][0]"]');
