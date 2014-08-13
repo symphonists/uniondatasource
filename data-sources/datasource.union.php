@@ -47,11 +47,14 @@
 			$class = self::getClass();
 
 			$settings[$class]['union'] = $this->dsParamUNION;
-			$settings[$class]['paginate_results'] = isset($this->dsParamPAGINATERESULTS) ? $this->dsParamPAGINATERESULTS : 'yes';
-			$settings[$class]['page_number'] = $this->dsParamSTARTPAGE;
-			$settings[$class]['max_records'] = $this->dsParamLIMIT;
-			$settings[$class]['redirect_on_empty'] = isset($this->dsParamREDIRECTONEMPTY) ? $this->dsParamREDIRECTONEMPTY : 'no';
-			$settings[$class]['required_url_param'] = $this->dsParamREQUIREDPARAM;
+
+			$settings['redirect_on_empty'] = isset($this->dsParamREDIRECTONEMPTY) ? $this->dsParamREDIRECTONEMPTY : 'no';
+			$settings['required_url_param'] = $this->dsParamREQUIREDPARAM;
+			$settings['redirect_on_forbidden'] = isset($this->dsParamREDIRECTONFORBIDDEN) ? $this->dsParamREDIRECTONFORBIDDEN : 'no';
+			$settings['redirect_on_required'] = isset($this->dsParamREDIRECTONREQUIRED) ? $this->dsParamREDIRECTONREQUIRED : 'no';
+			$settings['paginate_results'] = isset($this->dsParamPAGINATERESULTS) ? $this->dsParamPAGINATERESULTS : 'yes';
+			$settings['page_number'] = $this->dsParamSTARTPAGE;
+			$settings['max_records'] = $this->dsParamLIMIT;
 
 			return $settings;
 		}
@@ -328,24 +331,6 @@
 				$errors[self::getClass()]['union'] = __('At least one datasource is required to build a Union Datasource');
 			}
 
-			if(strlen(trim($union_settings['page_number'])) == 0 || (is_numeric($union_settings['page_number']) && $union_settings['page_number'] < 1)){
-				if (isset($union_settings['paginate_results'])) {
-					$errors[self::getClass()]['page_number'] = __('A page number must be set');
-				}
-			}
-			else if(!self::__isValidPageString($union_settings['page_number'])){
-				$errors[self::getClass()]['page_number'] = __('Must be a valid number or parameter');
-			}
-
-			if(strlen(trim($union_settings['max_records'])) == 0 || (is_numeric($union_settings['max_records']) && $union_settings['max_records'] < 1)){
-				if (isset($union_settings['paginate_results'])) {
-					$errors[self::getClass()]['max_records'] = __('A result limit must be set');
-				}
-			}
-			else if(!self::__isValidPageString($union_settings['max_records'])){
-				$errors[self::getClass()]['max_records'] = __('Must be a valid number or parameter');
-			}
-
 			return empty($errors[self::getClass()]);
 		}
 
@@ -356,6 +341,8 @@
 
 			$settings['paginate_results'] = ($settings['paginate_results'] == 'on') ? 'yes' : 'no';
 			$settings['redirect_on_empty'] = isset($settings['redirect_on_empty']) ? 'yes' : 'no';
+			$settings['redirect_on_forbidden'] = isset($settings['redirect_on_forbidden']) ? 'yes' : 'no';
+			$settings['redirect_on_required'] = isset($settings['redirect_on_required']) ? 'yes' : 'no';
 
 			return sprintf($template,
 				$params['rootelement'], // rootelement
@@ -364,7 +351,9 @@
 				$settings['max_records'],
 				$settings['redirect_on_empty'],
 				$settings['required_url_param'],
-				$settings['negate_url_param']
+				$settings['redirect_on_required'],
+				$settings['negate_url_param'],
+				$settings['redirect_on_forbidden']
 			);
 		}
 
@@ -423,6 +412,9 @@
 			// doesn't exist, then _force_empty_result will be set to true before this
 			// Datasource is executed (this happens in Frontend Page)
 			if($this->_force_empty_result == true){
+				if ($this->dsParamREDIRECTONREQUIRED == 'yes') {
+					throw new FrontendPageNotFoundException;
+				}
 				$this->_force_empty_result = false; //this is so the section info element doesn't disappear.
 				$error = new XMLElement('error', __("Data source not executed, required parameter is missing."), array(
 					'required-param' => $this->dsParamREQUIREDPARAM
@@ -433,6 +425,9 @@
 			}
 
 			if($this->_negate_result == true){
+				if ($this->dsParamREDIRECTONFORBIDDEN == 'yes') {
+					throw new FrontendPageNotFoundException;
+				}
 				$this->_negate_result = false; //this is so the section info element doesn't disappear.
 				$this->negateXMLSet($result);
 

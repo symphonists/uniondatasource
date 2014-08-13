@@ -10,7 +10,9 @@
 		public $dsParamLIMIT = '%s';
 		public $dsParamREDIRECTONEMPTY = '%s';
 		public $dsParamREQUIREDPARAM = '%s';
+		public $dsParamREDIRECTONREQUIRED = '%s';
 		public $dsParamNEGATEPARAM = '%s';
+		public $dsParamREDIRECTONFORBIDDEN = '%s';
 
 		<!-- UNION -->
 
