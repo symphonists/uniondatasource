@@ -860,7 +860,7 @@
 
 				// Add the Symphony 'system:*' parameters to the param pool
 				if($this->canDatasourceProcessSystemParameters($datasource)) {
-					$this->processDatasourceSystemParameters($datasource, $entry);
+					$this->processDatasourceSystemParameters($datasource, $entry, $param_pool);
 				}
 
 				foreach($data as $field_id => $values) {
@@ -870,7 +870,7 @@
 					}
 
 					// Process output parameters
-					$this->processDatasourceOutputParameters($datasource, $entry, $field_id, $values);
+					$this->processDatasourceOutputParameters($datasource, $entry, $field_id, $values, $param_pool);
 
 					if (!$datasource->_param_output_only) foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 						list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
@@ -1003,7 +1003,7 @@
 			return false;
 		}
 
-		public function processDatasourceSystemParameters(Datasource $datasource, Entry $entry) {
+		public function processDatasourceSystemParameters(Datasource $datasource, Entry $entry, &$param_pool) {
 			if(!isset($datasource->dsParamPARAMOUTPUT)) return;
 
 			// Support the legacy parameter `ds-datasource-handle`
@@ -1033,7 +1033,7 @@
 			}
 		}
 
-		public function processDatasourceOutputParameters(Datasource $datasource, Entry $entry, $field_id, array $data) {
+		public function processDatasourceOutputParameters(Datasource $datasource, Entry $entry, $field_id, array $data, &$param_pool) {
 			if(!isset($datasource->dsParamPARAMOUTPUT)) return;
 
 			// Support the legacy parameter `ds-datasource-handle`
@@ -1064,6 +1064,8 @@
 					if($singleParam) $datasource->_param_pool[$key][] = $param_pool_values;
 				}
 			}
+
+			$param_pool = array_merge_recursive($param_pool, $datasource->_param_pool);
 		}
 	}
 
