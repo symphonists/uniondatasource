@@ -3,7 +3,7 @@
 	require_once TOOLKIT . '/class.datasource.php';
 	require_once FACE . '/interface.datasource.php';
 
-	Class UnionDatasource extends SectionDataSource implements iDatasource {
+	Class UnionDatasource extends SectionDatasource implements iDatasource {
 
 		/**
 		 * An array of Field objects, used to stop unnecessary creation of field objects
