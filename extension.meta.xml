@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension id="uniondatasource" status="released" xmlns="http://symphony-cms.com/schemas/extension/1.0">
+<extension id="uniondatasource" status="released" xmlns="http://getsymphony.com/schemas/extension/1.0">
 	<name>Union Datasource</name>
 	<description>The Union Datasource extension allows you to combine multiple Data Sources to output as a single Data Source for the primary purpose of a unified pagination.</description>
 	<repo type="github">https://github.com/brendo/uniondatasource</repo>
-	<url type="discuss">http://symphony-cms.com/discuss/thread/66151/</url>
+	<url type="discuss">http://getsymphony.com/discuss/thread/66151/</url>
 	<types>
 		<type>Other</type>
 	</types>
@@ -14,9 +14,11 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="1.1beta1" date="2014-04-29" min="2.4">
-			* Support for Symphony 2.4
+		<release version="1.1" date="2014-12-22" min="2.5">
+			* Support for Symphony 2.5+
+			* [#35](https://github.com/brendo/uniondatasource/issues/35) Ensure values are actually added to the parameter pool
 			* Fix issues when using two datasources from the same section
+			* Support Forbidden/Required parameters
 		</release>
 		<release version="1.0.4" date="2013-09-05" min="2.3.3" max="2.3.6">
 			* [#30](https://github.com/brendo/uniondatasource/issues/30) Add support for modification date
