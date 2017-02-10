@@ -1064,8 +1064,7 @@
 					if($singleParam) $datasource->_param_pool[$key][] = $param_pool_values;
 				}
 			}
-   //remove params due to duplicated param bug(?)
-			//$param_pool = array_merge_recursive($param_pool, $datasource->_param_pool);
+			$param_pool = array_replace_recursive($param_pool, $datasource->_param_pool);
 		}
 	}
 
