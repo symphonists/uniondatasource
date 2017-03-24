@@ -14,6 +14,10 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.2" date="2017-03-24" min="2.5">
+			* [#43](https://github.com/brendo/uniondatasource/issues/43) Fix formatted textarea being escaped (thanks @Aonrud)
+			* [#42](https://github.com/brendo/uniondatasource/issues/42) Prevent parameters from duplicating in the output (thanks @moretaste)
+		</release>
 		<release version="1.1" date="2014-12-22" min="2.5">
 			* Support for Symphony 2.5+
 			* [#35](https://github.com/brendo/uniondatasource/issues/35) Ensure values are actually added to the parameter pool
