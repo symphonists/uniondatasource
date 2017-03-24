@@ -875,7 +875,7 @@
 					if (!$datasource->_param_output_only) foreach ($datasource->dsParamINCLUDEDELEMENTS as $handle) {
 						list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
 						if(self::$field_pool[$field_id]->get('element_name') == $handle) {
-							self::$field_pool[$field_id]->appendFormattedElement($xEntry, $values, ($datasource->dsParamHTMLENCODE ? true : false), $mode, $entry->get('id'));
+							self::$field_pool[$field_id]->appendFormattedElement($xEntry, $values, ($datasource->dsParamHTMLENCODE === 'yes' ? true : false), $mode, $entry->get('id'));
 						}
 					}
 				}
@@ -1064,8 +1064,7 @@
 					if($singleParam) $datasource->_param_pool[$key][] = $param_pool_values;
 				}
 			}
-
-			$param_pool = array_merge_recursive($param_pool, $datasource->_param_pool);
+			$param_pool = array_replace_recursive($param_pool, $datasource->_param_pool);
 		}
 	}
 
