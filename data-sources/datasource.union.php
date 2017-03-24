@@ -982,10 +982,22 @@
 
 		public function setDatasourceAssociatedEntryCounts(Datasource $datasource, XMLElement &$xEntry, Entry $entry) {
 			$associated_entry_counts = $entry->fetchAllAssociatedEntryCounts($datasource->_associated_sections);
-			if(!empty($associated_entry_counts)){
-				foreach($associated_entry_counts as $section_id => $count){
-					foreach($datasource->_associated_sections as $section) {
-						if ($section['id'] == $section_id) $xEntry->setAttribute($section['handle'], (string)$count);
+			
+			if (!empty($associated_entry_counts)) {
+				foreach ($associated_entry_counts as $section_id => $fields) {
+					foreach ($datasource->_associated_sections as $section) {
+						if ($section['id'] != $section_id) continue;
+
+						// For each related field show the count (#2083)
+						foreach($fields as $field_id => $count) {
+							$field_handle = FieldManager::fetchHandleFromID($field_id);
+							if($field_handle) {
+								$xEntry->setAttribute($section['handle'] . '-' . $field_handle, (string)$count);
+							}
+
+							// Backwards compatibility (without field handle)
+							$xEntry->setAttribute($section['handle'], (string)$count);
+						}
 					}
 				}
 			}
