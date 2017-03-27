@@ -2,7 +2,7 @@
 <extension id="uniondatasource" status="released" xmlns="http://getsymphony.com/schemas/extension/1.0">
 	<name>Union Datasource</name>
 	<description>The Union Datasource extension allows you to combine multiple Data Sources to output as a single Data Source for the primary purpose of a unified pagination.</description>
-	<repo type="github">https://github.com/brendo/uniondatasource</repo>
+	<repo type="github">https://github.com/symphonists/uniondatasource</repo>
 	<url type="discuss">http://getsymphony.com/discuss/thread/66151/</url>
 	<types>
 		<type>Other</type>
