@@ -240,7 +240,11 @@
 			$i = 0;
 			foreach($datasources as $handle => $datasource) {
 				$about = $datasource->about();
-				$source = SectionManager::fetch($datasources[$handle]->getSource());
+				$source = (new SectionManager)
+					->select()
+					->section($datasources[$handle]->getSource())
+					->execute()
+					->next();
 
 				if(($source instanceof Section) === false) continue;
 
@@ -278,7 +282,11 @@
 					if(!isset($datasources[$handle])) continue;
 
 					$about = $datasources[$handle]->about();
-					$source = SectionManager::fetch($datasources[$handle]->getSource());
+					$source = (new SectionManager)
+						->select()
+						->section($datasources[$handle]->getSource())
+						->execute()
+						->next();
 
 					if(($source instanceof Section) === false) continue;
 
@@ -384,9 +392,11 @@
 						str_replace('-','_', $handle), $this->_env, true
 					);
 
-					$this->datasources[$handle]['section'] = SectionManager::fetch(
-						$this->datasources[$handle]['datasource']->getSource()
-					);
+					$this->datasources[$handle]['section'] = (new SectionManager)
+						->select()
+						->section($this->datasources[$handle]['datasource']->getSource())
+						->execute()
+						->next();
 
 					$result->appendChild(
 						new XMLElement('section', General::sanitize($this->datasources[$handle]['section']->get('name')), array(
@@ -506,7 +516,12 @@
 
 			include_once(TOOLKIT . '/class.entrymanager.php');
 
-			if(!$section = SectionManager::fetch((int)$datasource->getSource())){
+			if(!$section = (new SectionManager)
+				->select()
+				->section((int)$datasource->getSource())
+				->execute()
+				->next()
+			){
 				$about = $datasource->about();
 				trigger_error(__('The section associated with the data source %s could not be found.', array('<code>' . $about['name'] . '</code>')), E_USER_ERROR);
 			}
@@ -556,9 +571,11 @@
 			}
 			// Handle real field instances
 			else {
-				$field = FieldManager::fetch(
-					 FieldManager::fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource())
-				);
+				$field = (new FieldManager)
+					->select()
+					->field(FieldManager::fetchFieldIDFromElementName($datasource->dsParamSORT, $datasource->getSource()))
+					->execute()
+					->next();
 
 				$field->buildSortingSQL($joins, $where, $data['sort'], $datasource->dsParamORDER);
 
@@ -841,7 +858,11 @@
 					// Setup any datasources variables ONCE.
 					if(!isset($ds['datasource']->_param_pool)) {
 						$ds['datasource']->_param_pool = $param_pool;
-						$pool = FieldManager::fetch(array_keys($data));
+						$pool = (new FieldManager)
+							->select()
+							->fields(array_keys($data))
+							->execute()
+							->rows();
 						self::$field_pool += $pool;
 
 						if (!isset($datasource->dsParamASSOCIATEDENTRYCOUNTS) || $datasource->dsParamASSOCIATEDENTRYCOUNTS == 'yes') {
@@ -866,7 +887,11 @@
 				foreach($data as $field_id => $values) {
 					// Check to see if we have a Field object already, if not create one
 					if(!isset(self::$field_pool[$field_id]) || !self::$field_pool[$field_id] instanceof Field) {
-						self::$field_pool[$field_id] = FieldManager::fetch($field_id);
+						self::$field_pool[$field_id] = (new FieldManager)
+							->select()
+							->field($field_id)
+							->execute()
+							->next();
 					}
 
 					// Process output parameters
@@ -913,7 +938,11 @@
 		public function processDatasourceFilters(Datasource $datasource, &$where, &$joins, &$group) {
 			if(!is_array($datasource->dsParamFILTERS) || empty($datasource->dsParamFILTERS)) return;
 
-			$pool = FieldManager::fetch(array_filter(array_keys($datasource->dsParamFILTERS), 'is_int'));
+			$pool = (new FieldManager)
+				->select()
+				->fields(array_filter(array_keys($datasource->dsParamFILTERS), 'is_int'))
+				->execute()
+				->rows();
 			self::$field_pool += $pool;
 
 			foreach($datasource->dsParamFILTERS as $field_id => $filter){

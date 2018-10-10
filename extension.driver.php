@@ -16,7 +16,7 @@
 			return true;
 		}
 
-		public static function providerOf($type = null) {
+		public function providerOf($type = null) {
 			self::registerProviders();
 
 			if(is_null($type)) return self::$provides;
