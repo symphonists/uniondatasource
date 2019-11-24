@@ -4,7 +4,7 @@
 
 	Class Extension_UnionDatasource extends Extension {
 
-		private static $provides = array();
+		protected static $provides = array();
 
 		public static function registerProviders() {
 			self::$provides = array(
